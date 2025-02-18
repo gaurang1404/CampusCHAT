@@ -14,13 +14,8 @@ const departmentSchema = new mongoose.Schema({
 
     headOfDepartment: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Admin', // Reference to Admin model for the head of department
-    },
-
-    numberOfFaculty: {
-      type: Number,
-      default: 0
-    },
+      ref: 'Faculty', 
+    },    
 
     description: {
       type: String,
@@ -33,11 +28,6 @@ const departmentSchema = new mongoose.Schema({
       required: true,
       unique: true
     },
-
-    coursesOffered: [{
-      type: String,
-      trim: true
-    }],
 
     isActive: {
       type: Boolean,
@@ -54,11 +44,15 @@ const departmentSchema = new mongoose.Schema({
       trim: true
     },
     
+    semesters: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Semester',
+    }],
+
     createdAt: {
       type: Date,
       default: Date.now,
     }
-  });
-  
-  export const Department = mongoose.model("Department", departmentSchema);
-  
+});
+
+export const Department = mongoose.model("Department", departmentSchema);

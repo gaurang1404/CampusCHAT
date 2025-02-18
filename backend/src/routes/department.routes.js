@@ -1,19 +1,12 @@
 import express from 'express';
 import { addDepartment, getDepartments, getDepartmentById, updateDepartment, deleteDepartment } from '../controllers/department.controller.js';
 import { authenticateJWT } from '../middlewares/auth.middleware.js';
-import rateLimit from 'express-rate-limit';
+import { rateLimiter } from '../middlewares/rate.middleware.js';
 
 const router = express.Router();
 
-// Rate limiter to avoid excessive requests for department actions
-const departmentLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 50, // Limit each IP to 50 requests per windowMs
-  message: "Too many requests from this IP, please try again later",
-});
-
 // Apply rate limit to the department creation route
-router.post("/add", authenticateJWT, departmentLimiter, addDepartment);
+router.post("/add", authenticateJWT, rateLimiter, addDepartment);
 
 // Route to get all departments (protected)
 router.get("/", authenticateJWT, getDepartments);

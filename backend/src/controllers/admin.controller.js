@@ -24,7 +24,7 @@ export const registerAdmin = async (req, res) => {
     // Validate the input fields
     if (!email || !firstName || !lastName || !password || !institutionName || !institutionDomain) {
       const errorMessage = "All fields are required";
-      logger.warn(`${new Date().toISOString()} - Error: ${errorMessage}`);
+      logger.warn(`${new Date().toISOString()} - Warn: ${errorMessage}`);
       return res.status(400).json({ message: errorMessage, status: 400 });
     }
 
@@ -32,21 +32,21 @@ export const registerAdmin = async (req, res) => {
     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     if (!emailRegex.test(email)) {
       const errorMessage = "Please provide a valid email address";
-      logger.warn(`${new Date().toISOString()} - Error: ${errorMessage}`);
+      logger.warn(`${new Date().toISOString()} - Warn: ${errorMessage}`);
       return res.status(400).json({ message: errorMessage, status: 400 });
     }
 
     // Check if the email matches the institution domain
     if (!email.endsWith(`@${institutionDomain}`)) {
       const errorMessage = "Email must belong to the institution domain";
-      logger.warn(`${new Date().toISOString()} - Error: ${errorMessage}`);
+      logger.warn(`${new Date().toISOString()} - Warn: ${errorMessage}`);
       return res.status(400).json({ message: errorMessage, status: 400 });
     }
 
     // Password length validation
     if (password.length < 8) {
       const errorMessage = "Password should be at least 8 characters";
-      logger.warn(`${new Date().toISOString()} - Error: ${errorMessage}`);
+      logger.warn(`${new Date().toISOString()} - Warn: ${errorMessage}`);
       return res.status(400).json({ message: errorMessage, status: 400 });
     }
 
@@ -54,7 +54,7 @@ export const registerAdmin = async (req, res) => {
     const existingAdmin = await Admin.findOne({ collegeEmail: email });
     if (existingAdmin) {
       const errorMessage = "Admin with this email already exists";
-      logger.warn(`${new Date().toISOString()} - Error: ${errorMessage}`);
+      logger.warn(`${new Date().toISOString()} - Warn: ${errorMessage}`);
       return res.status(400).json({ message: errorMessage, status: 400 });
     }
 

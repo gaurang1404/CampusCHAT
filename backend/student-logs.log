@@ -1,0 +1,2 @@
+warn: 2025-02-18T16:28:25.276Z - Warn: All fields are required {"timestamp":"2025-02-18T16:28:25.276Z"}
+error: Error adding student: Cast to ObjectId failed for value "bfcnf" (type string) at path "_id" for model "Department" {"timestamp":"2025-02-18T16:28:29.597Z"}

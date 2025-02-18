@@ -18,7 +18,7 @@ const logger = winston.createLogger({
 // Create a new department
 export const addDepartment = async (req, res) => {
     try {
-      const { name, institutionDomain, description, coursesOffered, location, departmentCode } = req.body;      
+      const { name, institutionDomain, description, location, departmentCode, headOfDepartment } = req.body;      
   
       // Find the institution domain from the admin (using the adminId from the JWT)
       const admin = await Admin.findById(req.adminId);  // Using req.adminId from the JWT payload
@@ -50,9 +50,8 @@ export const addDepartment = async (req, res) => {
         institutionDomain,
         departmentCode,
         description,
-        coursesOffered,
         location,
-        headOfDepartment: req.body.headOfDepartment 
+        headOfDepartment 
       });
   
       // Save the department to the database

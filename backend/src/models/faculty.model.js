@@ -1,7 +1,6 @@
 import mongoose from "mongoose";
 
-// Admin schema - updated for stricter email and password validation
-const adminSchema = new mongoose.Schema({
+const facultySchema = new mongoose.Schema({
   firstName: {
     type: String,
     required: [true, "First name is required"],
@@ -33,19 +32,41 @@ const adminSchema = new mongoose.Schema({
     required: [true, "Password is required"],
     minlength: [8, "Password should be at least 8 characters"], // Enforce a minimum length of 8 for security    
   },
-
-
-  institutionName: {
-    type: String,
-    required: [true, "Institution name is required"],
-    trim: true,
-  },
-
   institutionDomain: {
     type: String,
     required: [true, "Institution domain is required"],
     unique: true,
     match: [/^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/, "Invalid domain format"], // Ensure domain format is correct
+  },
+
+  facultyId: {
+    type: String,
+    required: [true, "ID is required"],
+    unique: true,
+    trim: true
+  },
+
+  phone: {
+    type: String,
+    required: [true, "Phone number is required"],
+    match: [/^\d{10}$/, "Phone number must be 10 digits"],
+  },
+
+  departmentId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Department",
+    required: [true, "Department is required"],
+  },
+
+  designation: {
+    type: String,
+    required: [true, "Designation is required"],
+    enum: ["Professor", "Associate Professor", "Assistant Professor", "Lecturer"],
+  },
+
+  joiningDate: {
+    type: Date,
+    required: [true, "Joining date is required"],
   },
 
   createdAt: {
@@ -54,13 +75,4 @@ const adminSchema = new mongoose.Schema({
   },
 });
 
-
-// Middleware to enforce email domain validation
-adminSchema.pre("save", function (next) {
-  if (this.isModified("collegeEmail") && !this.collegeEmail.endsWith(`@${this.institutionDomain}`)) {
-    return next(new Error("Admin email must match the institution domain"));
-  }
-  next();
-});
-
-export const Admin = mongoose.model("Admin", adminSchema);
+export const Faculty = mongoose.model("Faculty", facultySchema);

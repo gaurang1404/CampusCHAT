@@ -7,7 +7,7 @@ const sectionSchema = new mongoose.Schema({
         trim: true
     },
 
-    semester: {
+    semesterId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Semester",
         required: [true, "Associated semester is required"]
@@ -18,7 +18,7 @@ const sectionSchema = new mongoose.Schema({
         ref: "Student"
     }],
 
-    courseFacultyMapping: [{
+    courseFacultyMappings: [{
         courseId: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "Course",

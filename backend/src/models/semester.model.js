@@ -12,10 +12,10 @@ const semesterSchema = new mongoose.Schema({
         type: String,
         required: [true, "Semester code is required"],
         unique: true,
-        trim: true
+        trim: true 
     },
 
-    departmentId: {
+    departmentId: { 
         type: mongoose.Schema.Types.ObjectId,
         ref: "Department",
         required: [true, "Associated department is required"]
@@ -28,13 +28,11 @@ const semesterSchema = new mongoose.Schema({
 
 
     startDate: {
-        type: Date,
-        required: [true, "Start date is required"]
+        type: String
     },
 
     endDate: {
-        type: Date,
-        required: [true, "End date is required"]
+        type: String
     },
 
     isActive: {

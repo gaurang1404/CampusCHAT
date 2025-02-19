@@ -1,5 +1,8 @@
 import { Department } from "../models/department.model.js"
+import { Semester } from "../models/semester.model.js";
+import { Section } from "../models/section.model.js";
 import { Admin } from "../models/admin.model.js"
+
 import winston from 'winston'; // Importing winston for logging
 
 // Logger setup with timestamp
@@ -123,20 +126,33 @@ export const updateDepartment = async (req, res) => {
   }
 };
 
-// Delete a department
+// Delete a department along with its semesters and sections
 export const deleteDepartment = async (req, res) => {
   try {
-    const deletedDepartment = await Department.findByIdAndDelete(req.params.id);
-
-    if (!deletedDepartment) {
+    const department = await Department.findById(req.params.id);
+    if (!department) {
       return res.status(404).json({ message: "Department not found" });
     }
 
-    logger.info(`Department deleted successfully: ${deletedDepartment.name} with code: ${deletedDepartment.departmentCode}`); // Log success message
+    // Find all semesters linked to this department
+    const semesters = await Semester.find({ departmentId: department._id });
 
-    res.status(200).json({ message: "Department deleted successfully" });
+    // Collect all section IDs from these semesters
+    const sectionIds = semesters.flatMap((semester) => semester.sections);
+
+    // Delete all sections associated with these semesters
+    await Section.deleteMany({ _id: { $in: sectionIds } });
+
+    // Delete all semesters of this department
+    await Semester.deleteMany({ departmentId: department._id });
+
+    // Delete the department itself
+    await Department.findByIdAndDelete(req.params.id);
+
+    logger.info(`Department deleted: ${department.name} (${department.departmentCode}), along with its semesters and sections.`);
+    res.status(200).json({ message: "Department, its semesters, and sections deleted successfully" });
   } catch (error) {
     logger.error(`Error deleting department: ${error.message}`);
-    res.status(500).json({ message: "Internal Server error", error: error.message });
+    res.status(500).json({ message: "Internal Server Error", error: error.message });
   }
 };

@@ -1,5 +1,7 @@
 import { Department } from "../models/department.model.js";
 import { Semester } from "../models/semester.model.js";
+import { Section } from "../models/section.model.js";
+
 import winston from 'winston';
 
 const logger = winston.createLogger({
@@ -104,20 +106,27 @@ export const updateSemester = async (req, res) => {
     }
 };
 
-// Delete a semester
+// Delete a semester and its associated sections
 export const deleteSemester = async (req, res) => {
     try {
-        const deletedSemester = await Semester.findByIdAndDelete(req.params.id);
-        if (!deletedSemester) {
+        const semester = await Semester.findById(req.params.id);
+        if (!semester) {
             return res.status(404).json({ message: "Semester not found" });
         }
 
-        await Department.findByIdAndUpdate(deletedSemester.departmentId, {
-            $pull: { semesters: deletedSemester._id },
+        // Delete all sections associated with this semester
+        await Section.deleteMany({ _id: { $in: semester.sections } });
+
+        // Remove semester reference from the department
+        await Department.findByIdAndUpdate(semester.departmentId, {
+            $pull: { semesters: semester._id },
         });
 
-        logger.info(`Semester deleted: ${deletedSemester.name} (${deletedSemester.semesterCode})`);
-        res.status(200).json({ message: "Semester deleted successfully" });
+        // Delete the semester itself
+        await Semester.findByIdAndDelete(req.params.id);
+
+        logger.info(`Semester deleted: ${semester.name} (${semester.semesterCode}), along with its sections.`);
+        res.status(200).json({ message: "Semester and its sections deleted successfully" });
     } catch (error) {
         logger.error(`Error deleting semester: ${error.message}`);
         res.status(500).json({ message: "Internal Server Error", error: error.message });

@@ -1,6 +1,8 @@
 import { Student } from "../models/student.model.js";
 import { Department } from "../models/department.model.js";
 import { Admin } from "../models/admin.model.js";
+import { Section } from "../models/section.model.js";
+import { Semester } from "../models/semester.model.js";
 import bcrypt from "bcrypt";
 import winston from "winston";
 
@@ -44,9 +46,9 @@ export const addStudent = async (req, res) => {
         }
 
         // Validate Admin
-        const admin = await Admin.findById(req.adminId);
+        const admin = await Admin.findById(req.userId);
         if (!admin) {
-            logger.error(`Admin not found for adminId: ${req.adminId}`);
+            logger.error(`Admin not found for adminId: ${req.userId}`);
             return res.status(404).json({ message: "Admin not found", status: 404 });
         }
 
@@ -69,23 +71,25 @@ export const addStudent = async (req, res) => {
             return res.status(404).json({ message: "Department not found", status: 404 });
         }
 
-        // Validate Semester (assuming Semester is a model)
+        // Validate Semester
         const semesterExists = await Semester.findById(semesterId);
         if (!semesterExists) {
             return res.status(404).json({ message: "Semester not found", status: 404 });
         }
 
-        // Validate Section (assuming Section is a model)
+        // Validate Section
         const sectionExists = await Section.findById(sectionId);
         if (!sectionExists) {
             return res.status(404).json({ message: "Section not found", status: 404 });
         }
 
-        // Check if student with the same email exists
-        const existingStudent = await Student.findOne({ collegeEmail });
+        // Check if student with the same email or student ID exists
+        const existingStudent = await Student.findOne({
+            $or: [{ collegeEmail }, { studentId }]
+        });
         if (existingStudent) {
-            logger.warn(`Student with email ${collegeEmail} already exists`);
-            return res.status(400).json({ message: "Student with this email already exists", status: 400 });
+            logger.warn(`Student already exists with email ${collegeEmail} or student ID ${studentId}`);
+            return res.status(400).json({ message: "Student with this email or student ID already exists", status: 400 });
         }
 
         // Hash the password securely
@@ -114,7 +118,6 @@ export const addStudent = async (req, res) => {
         res.status(500).json({ message: "Internal Server error", error: error.message, status: 500 });
     }
 };
-
 
 // Get All Students
 export const getStudents = async (req, res) => {
@@ -169,4 +172,3 @@ export const deleteStudent = async (req, res) => {
         res.status(500).json({ message: "Internal Server error", error: error.message, status: 500 });
     }
 };
-

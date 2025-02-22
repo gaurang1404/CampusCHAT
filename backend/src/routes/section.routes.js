@@ -4,7 +4,8 @@ import {
   getSections, 
   getSectionById, 
   updateSection, 
-  deleteSection 
+  deleteSection, 
+  addCourseFacultyMapping
 } from '../controllers/section.controller.js';
 import { authenticateJWT } from '../middlewares/auth.middleware.js';
 import { rateLimiter } from '../middlewares/rate.middleware.js';
@@ -13,6 +14,9 @@ const router = express.Router();
 
 // Apply rate limiting and authentication to section creation
 router.post("/add", authenticateJWT, rateLimiter, addSection);
+
+// Route to add course faculty mapping (protected)
+router.post("/mapping", authenticateJWT, addCourseFacultyMapping);
 
 // Route to get all sections (protected)
 router.get("/", authenticateJWT, getSections);

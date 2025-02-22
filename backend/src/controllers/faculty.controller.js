@@ -21,9 +21,9 @@ const logger = winston.createLogger({
 // Add Faculty
 export const addFaculty = async (req, res) => {
   try {
-    const { firstName, lastName, email, password, phone, institutionDomain, departmentId, designation, joiningDate } = req.body;
+    const { firstName, lastName, collegeEmail, password, phone, institutionDomain, departmentId, designation, joiningDate, facultyId } = req.body;
 
-    if (!email || !firstName || !lastName || !password || !institutionDomain || !phone || !departmentId || !designation || !joiningDate) {
+    if (!collegeEmail || !firstName || !lastName || !password || !institutionDomain || !phone || !departmentId || !designation || !joiningDate || !facultyId) {
         const errorMessage = "All fields are required";
         logger.warn(`${new Date().toISOString()} - Warn: ${errorMessage}`);
         return res.status(400).json({ message: errorMessage, status: 400 });
@@ -45,16 +45,16 @@ export const addFaculty = async (req, res) => {
 
     // Email format validation
     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-    if (!emailRegex.test(email)) {
+    if (!emailRegex.test(collegeEmail)) {
       const errorMessage = "Please provide a valid email address";
       logger.warn(`${new Date().toISOString()} - Warn: ${errorMessage}`);
       return res.status(400).json({ message: errorMessage, status: 400 });
     }
 
     // Validate Admin
-    const admin = await Admin.findById(req.adminId);
+    const admin = await Admin.findById(req.userId);
     if (!admin) {
-      logger.error(`Admin not found for adminId: ${req.adminId}`);
+      logger.error(`Admin not found for adminId: ${req.userId}`);
       return res.status(404).json({ message: "Admin not found", status: 404 });
     }
 
@@ -65,7 +65,7 @@ export const addFaculty = async (req, res) => {
     }
 
     // Check if the email matches the institution domain
-    if (!email.endsWith(`@${admin.institutionDomain}`)) {
+    if (!collegeEmail.endsWith(`@${admin.institutionDomain}`)) {
         const errorMessage = "Email must belong to the institution domain";
         logger.warn(`${new Date().toISOString()} - Warn: ${errorMessage}`);
         return res.status(400).json({ message: errorMessage, status: 400 });
@@ -78,10 +78,16 @@ export const addFaculty = async (req, res) => {
     }
 
     // Check if faculty with the same email exists
-    const existingFaculty = await Faculty.findOne({ email });
-    if (existingFaculty) {
-      logger.warn(`Faculty with email ${email} already exists`);
+    const existingFacultyWithEmail = await Faculty.findOne({ collegeEmail });
+    if (existingFacultyWithEmail) {
+      logger.warn(`Faculty with email ${collegeEmail} already exists`);
       return res.status(400).json({ message: "Faculty with this email already exists", status: 400 });
+    }
+
+    const existingFacultyWithFacultyId = await Faculty.findOne({ facultyId });
+    if (existingFacultyWithFacultyId) {
+      logger.warn(`Faculty with ID ${facultyId} already exists`);
+      return res.status(400).json({ message: "Faculty with this ID already exists", status: 400 });
     }
 
     // Hash the password securely
@@ -91,8 +97,9 @@ export const addFaculty = async (req, res) => {
     const newFaculty = new Faculty({
       firstName,
       lastName,
-      email,
+      collegeEmail,
       password: hashedPassword,
+      facultyId,
       phone,
       institutionDomain,
       departmentId,

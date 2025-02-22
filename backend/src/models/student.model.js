@@ -47,19 +47,19 @@ const studentSchema = new mongoose.Schema({
         trim: true
     },
 
-    section: {
+    sectionId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Section",
         required: [true, "Associated section is required"]
     },
 
-    semester: {
+    semesterId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Semester",
         required: [true, "Associated semester is required"]
     },
 
-    department: {
+    departmentId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Department",
         required: [true, "Associated department is required"]

@@ -24,10 +24,10 @@ export const addDepartment = async (req, res) => {
     const { name, institutionDomain, description, location, departmentCode, headOfDepartment } = req.body;
 
     // Find the institution domain from the admin (using the adminId from the JWT)
-    const admin = await Admin.findById(req.adminId);  // Using req.adminId from the JWT payload
+    const admin = await Admin.findById(req.userId);  // Using req.adminId from the JWT payload
 
     if (!admin) {
-      logger.error(`Admin not found for adminId: ${req.adminId}`); // Log error when admin is not found
+      logger.error(`Admin not found for adminId: ${req.userId}`); // Log error when admin is not found
       return res.status(404).json({ message: "Admin not found" });
     }
 

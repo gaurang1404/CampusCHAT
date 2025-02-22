@@ -20,9 +20,9 @@ const logger = winston.createLogger({
 // Add Student
 export const addStudent = async (req, res) => {
     try {
-        const { firstName, lastName, collegeEmail, password, studentId, institutionDomain, section, semester, department } = req.body;
+        const { firstName, lastName, collegeEmail, password, studentId, institutionDomain, sectionId, semesterId, departmentId } = req.body;
 
-        if (!firstName || !lastName || !collegeEmail || !password || !studentId || !institutionDomain || !section || !semester || !department) {
+        if (!firstName || !lastName || !collegeEmail || !password || !studentId || !institutionDomain || !sectionId || !semesterId || !departmentId) {
             const errorMessage = "All fields are required";
             logger.warn(`${new Date().toISOString()} - Warn: ${errorMessage}`);
             return res.status(400).json({ message: errorMessage, status: 400 });
@@ -64,19 +64,19 @@ export const addStudent = async (req, res) => {
         }
 
         // Validate Department
-        const departmentExists = await Department.findById(department);
+        const departmentExists = await Department.findById(departmentId);
         if (!departmentExists) {
             return res.status(404).json({ message: "Department not found", status: 404 });
         }
 
         // Validate Semester (assuming Semester is a model)
-        const semesterExists = await Semester.findById(semester);
+        const semesterExists = await Semester.findById(semesterId);
         if (!semesterExists) {
             return res.status(404).json({ message: "Semester not found", status: 404 });
         }
 
         // Validate Section (assuming Section is a model)
-        const sectionExists = await Section.findById(section);
+        const sectionExists = await Section.findById(sectionId);
         if (!sectionExists) {
             return res.status(404).json({ message: "Section not found", status: 404 });
         }
@@ -99,9 +99,9 @@ export const addStudent = async (req, res) => {
             password: hashedPassword,
             studentId,
             institutionDomain,
-            section,
-            semester,
-            department,
+            sectionId,
+            semesterId,
+            departmentId,
         });
 
         // Save Student to DB

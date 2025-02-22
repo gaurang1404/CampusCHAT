@@ -119,9 +119,9 @@ export const loginAdmin = async (req, res) => {
 
     // Create JWT token
     const token = jwt.sign(
-      { adminId: admin._id, email: admin.collegeEmail },
+      { userId: admin._id, email: admin.collegeEmail, role: "Admin" },
       process.env.JWT_SECRET_KEY, // Ensure you have a secret key stored in your environment variables
-      { expiresIn: '24h' } // Token expires in 1 hour
+      { expiresIn: '30d' } // Token expires in 1 hour
     );
 
     // Send success response with token

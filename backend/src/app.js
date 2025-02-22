@@ -4,6 +4,7 @@ import departmentRoutes from "./routes/department.routes.js";
 import facultyRoutes from "./routes/faculty.routes.js";
 import semesterRoutes from "./routes/semester.routes.js";
 import sectionRoutes from "./routes/section.routes.js";
+import courseRoutes from "./routes/course.routes.js";
 import studentRoutes from "./routes/student.routes.js";
 
 import express from "express";
@@ -20,6 +21,7 @@ app.use("/api/department", departmentRoutes);
 app.use("/api/faculty", facultyRoutes);
 app.use("/api/semester", semesterRoutes);
 app.use("/api/section", sectionRoutes);
+app.use("/api/course", courseRoutes);
 app.use("/api/student", studentRoutes);
 
 export default app;

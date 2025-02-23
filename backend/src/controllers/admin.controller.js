@@ -138,3 +138,83 @@ export const loginAdmin = async (req, res) => {
     return res.status(500).json({ message: 'Internal Server Error', status: 500 });
   }
 };
+
+export const updateAdmin = async (req, res) => {
+  try {
+    const { adminId } = req.params;
+    const { firstName, lastName, email, password, institutionName, institutionDomain } = req.body;
+
+    // Validate required fields
+    if (!adminId) {
+      const errorMessage = "Admin ID is required";
+      logger.warn(`${new Date().toISOString()} - Warn: ${errorMessage}`);
+      return res.status(400).json({ message: errorMessage, status: 400 });
+    }
+
+    // Fetch the existing admin details
+    const admin = await Admin.findById(adminId);
+    if (!admin) {
+      const errorMessage = "Admin not found";
+      logger.warn(`${new Date().toISOString()} - Warn: ${errorMessage}`);
+      return res.status(404).json({ message: errorMessage, status: 404 });
+    }
+
+    // Prevent email and domain duplication
+    if (email && email !== admin.collegeEmail) {
+      const existingEmail = await Admin.findOne({ collegeEmail: email });
+      if (existingEmail) {
+        const errorMessage = "Another admin already uses this email";
+        logger.warn(`${new Date().toISOString()} - Warn: ${errorMessage}`);
+        return res.status(400).json({ message: errorMessage, status: 400 });
+      }
+    }
+
+    if (institutionDomain && institutionDomain !== admin.institutionDomain) {
+      const existingDomain = await Admin.findOne({ institutionDomain });
+      if (existingDomain) {
+        const errorMessage = "Another admin already registered this institution domain";
+        logger.warn(`${new Date().toISOString()} - Warn: ${errorMessage}`);
+        return res.status(400).json({ message: errorMessage, status: 400 });
+      }
+    }
+
+    // Validate that the email belongs to the updated institution domain
+    if (email && institutionDomain && !email.endsWith(`@${institutionDomain}`)) {
+      const errorMessage = "Email must match the institution domain";
+      logger.warn(`${new Date().toISOString()} - Warn: ${errorMessage}`);
+      return res.status(400).json({ message: errorMessage, status: 400 });
+    }
+
+    // Update fields
+    if (firstName) admin.firstName = firstName;
+    if (lastName) admin.lastName = lastName;
+    if (email) admin.collegeEmail = email;
+    if (institutionName) admin.institutionName = institutionName;
+    if (institutionDomain) admin.institutionDomain = institutionDomain;
+
+    // If password is being updated, hash it
+    if (password) {
+      if (password.length < 8) {
+        const errorMessage = "Password should be at least 8 characters";
+        logger.warn(`${new Date().toISOString()} - Warn: ${errorMessage}`);
+        return res.status(400).json({ message: errorMessage, status: 400 });
+      }
+      admin.password = await bcrypt.hash(password, 10);
+    }
+
+    // Save the updated admin
+    await admin.save();
+
+    // Log success message
+    const successMessage = "Admin details updated successfully!";
+    logger.info(`${new Date().toISOString()} - Success: ${successMessage}`);
+    
+    return res.status(200).json({ message: successMessage, status: 200 });
+
+  } catch (error) {
+    // Log error
+    logger.error(`${new Date().toISOString()} - Error: Error updating admin - ${error.message}`);
+    return res.status(500).json({ message: "Internal Server Error", status: 500 });
+  }
+};
+

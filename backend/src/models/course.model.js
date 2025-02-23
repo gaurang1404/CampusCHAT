@@ -10,21 +10,25 @@ const courseSchema = new Schema({
         trim: true,
         uppercase: true,
     },
+    
     name: {
         type: String,
         required: true,
         trim: true,
     },
+
     description: {
         type: String,
         required: true,
         maxlength: 500,
     },
+
     departmentId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Department",
         required: [true, "Department is required"],
-    },    
+    },
+
     credits: {
         type: Number,
         required: true,

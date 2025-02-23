@@ -181,3 +181,41 @@ export const addCourseFacultyMapping = async (req, res) => {
         res.status(500).json({ message: "Internal Server Error", error: error.message });
     }
 };
+
+export const deleteCourseFacultyMapping = async (req, res) => {
+    try {
+        const { sectionId, courseId, facultyId } = req.body;
+
+        if (!sectionId || !courseId || !facultyId) {
+            const errorMessage = "Missing required fields: sectionId, courseId, facultyId";
+            logger.warn(errorMessage);
+            return res.status(400).json({ message: errorMessage });
+        }
+
+        const section = await Section.findById(sectionId);
+        if (!section) {
+            logger.error(`Section not found for sectionId: ${sectionId}`);
+            return res.status(404).json({ message: "Section not found" });
+        }
+
+        const initialLength = section.courseFacultyMappings.length;
+        section.courseFacultyMappings = section.courseFacultyMappings.filter(mapping => 
+            !(mapping.courseId.toString() === courseId && mapping.facultyId.toString() === facultyId)
+        );
+
+        if (section.courseFacultyMappings.length === initialLength) {
+            const errorMessage = `Mapping not found for courseId: ${courseId} and facultyId: ${facultyId} in section: ${sectionId}`;
+            logger.warn(errorMessage);
+            return res.status(400).json({ message: errorMessage });
+        }
+
+        await section.save();
+
+        logger.info(`Removed course-faculty mapping for courseId: ${courseId} and facultyId: ${facultyId} from section: ${sectionId}`);
+        res.status(200).json({ message: "Course faculty mapping removed successfully", section });
+    } catch (error) {
+        logger.error(`Error removing course faculty mapping: ${error.message}`);
+        res.status(500).json({ message: "Internal Server Error", error: error.message });
+    }
+};
+

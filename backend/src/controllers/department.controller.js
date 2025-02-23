@@ -21,7 +21,7 @@ const logger = winston.createLogger({
 // Create a new department
 export const addDepartment = async (req, res) => {
   try {
-    const { name, institutionDomain, description, location, departmentCode, headOfDepartment } = req.body;
+    const { name, institutionDomain, description, location, departmentCode, headOfDepartment, dateEstablished } = req.body;
 
     // Find the institution domain from the admin (using the adminId from the JWT)
     const admin = await Admin.findById(req.userId);  // Using req.adminId from the JWT payload
@@ -58,7 +58,8 @@ export const addDepartment = async (req, res) => {
       departmentCode,
       description,
       location,
-      headOfDepartment
+      headOfDepartment,
+      dateEstablished
     });
 
     // Save the department to the database
@@ -106,25 +107,46 @@ export const getDepartmentById = async (req, res) => {
   }
 };
 
-// Update a department
 export const updateDepartment = async (req, res) => {
   try {
-    const updatedDepartment = await Department.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true } // Return the updated department
-    );
+    const { id } = req.params;
+    const { name, description, location, departmentCode, headOfDepartment, isActive, dateEstablished } = req.body;
 
-    if (!updatedDepartment) {
+    // Find the department
+    const department = await Department.findById(id);
+    if (!department) {
+      logger.warn(`Department not found with ID: ${id}`);
       return res.status(404).json({ message: "Department not found" });
     }
 
-    res.status(200).json({ message: "Department updated successfully", department: updatedDepartment });
+    // Ensure departmentCode remains unique if updating
+    if (department.departmentCode !== departmentCode) {
+      const existingDepartment = await Department.findOne({ departmentCode });
+      if (existingDepartment) {
+        logger.warn(`Department code already exists: ${departmentCode}`);
+        return res.status(400).json({ message: "Department with this code already exists" });
+      }
+    }
+
+    // Update only allowed fields
+    department.name = name || department.name;
+    department.description = description || department.description;
+    department.location = location || department.location;
+    department.departmentCode = departmentCode || department.departmentCode;
+    department.headOfDepartment = headOfDepartment || department.headOfDepartment;
+    department.isActive = isActive !== undefined ? isActive : department.isActive;
+    department.dateEstablished = dateEstablished || department.dateEstablished;
+
+    await department.save();
+
+    logger.info(`Department updated successfully: ${department.name} (${department.departmentCode})`);
+    res.status(200).json({ message: "Department updated successfully", department });
   } catch (error) {
     logger.error(`Error updating department: ${error.message}`);
     res.status(500).json({ message: "Internal Server error", error: error.message });
   }
 };
+
 
 // Delete a department along with its semesters and sections
 export const deleteDepartment = async (req, res) => {

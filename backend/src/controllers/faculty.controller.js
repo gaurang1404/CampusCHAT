@@ -143,19 +143,52 @@ export const getFacultyById = async (req, res) => {
   }
 };
 
-// Update Faculty
 export const updateFaculty = async (req, res) => {
   try {
-    const updatedFaculty = await Faculty.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    if (!updatedFaculty) {
+    const { id } = req.params;
+    const updateData = req.body;
+
+    // Ensure faculty exists
+    const existingFaculty = await Faculty.findById(id);
+    if (!existingFaculty) {
+      logger.warn(`Update failed: Faculty with ID ${id} not found.`);
       return res.status(404).json({ message: "Faculty not found", status: 404 });
     }
+
+    logger.info(`Updating faculty with ID: ${id}`);
+
+    // If updating email, ensure it matches the institution domain
+    if (updateData.collegeEmail && !updateData.collegeEmail.endsWith(`@${existingFaculty.institutionDomain}`)) {
+      logger.warn(`Invalid email update attempt for faculty ID ${id}: Email must match institution domain.`);
+      return res.status(400).json({ message: "Email must belong to the institution domain", status: 400 });
+    }
+
+    // If updating password, hash the new password
+    if (updateData.password) {
+      if (updateData.password.length < 8) {
+        logger.warn(`Password update failed for faculty ID ${id}: Password too short.`);
+        return res.status(400).json({ message: "Password should be at least 8 characters", status: 400 });
+      }
+      updateData.password = await bcrypt.hash(updateData.password, 10);
+    }
+
+    // If updating phone, validate length
+    if (updateData.phone && updateData.phone.length !== 10) {
+      logger.warn(`Invalid phone number update attempt for faculty ID ${id}.`);
+      return res.status(400).json({ message: "Please enter a valid phone number", status: 400 });
+    }
+
+    // Update faculty details
+    const updatedFaculty = await Faculty.findByIdAndUpdate(id, updateData, { new: true, runValidators: true });
+
+    logger.info(`Faculty updated successfully: ${updatedFaculty.firstName} ${updatedFaculty.lastName}, ID: ${id}`);
     res.status(200).json({ message: "Faculty updated successfully", faculty: updatedFaculty, status: 200 });
   } catch (error) {
-    logger.error(`Error updating faculty: ${error.message}`);
+    logger.error(`Error updating faculty with ID ${req.params.id}: ${error.message}`);
     res.status(500).json({ message: "Internal Server error", error: error.message, status: 500 });
   }
 };
+
 
 // Delete Faculty
 export const deleteFaculty = async (req, res) => {
@@ -172,3 +205,55 @@ export const deleteFaculty = async (req, res) => {
   }
 };
 
+export const updateFacultyDesignation = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { designation } = req.body;
+
+    // Allowed designations
+    const allowedDesignations = [
+      "Professor",
+      "Associate Professor",
+      "Assistant Professor",
+      "Lecturer",
+    ];
+
+    // Check if the new designation is valid
+    if (!allowedDesignations.includes(designation)) {
+      logger.warn(`Invalid designation update attempt for faculty ID ${id}: ${designation}`);
+      return res.status(400).json({        
+        message: "Invalid designation provided.",
+      });
+    }
+
+    logger.info(`Updating designation for faculty ID: ${id} to ${designation}`);
+
+    // Find the faculty and update the designation
+    const faculty = await Faculty.findOneAndUpdate(
+      { _id: id },
+      { designation },
+      { new: true, runValidators: true }
+    );
+
+    if (!faculty) {
+      logger.warn(`Faculty with ID ${id} not found during designation update.`);
+      return res.status(404).json({       
+        message: "Faculty not found.",
+      });
+    }
+
+    logger.info(`Designation updated successfully for faculty ID: ${id} to ${designation}`);
+
+    res.status(200).json({     
+      message: "Designation updated successfully.",
+      faculty,
+    });
+  } catch (error) {
+    logger.error(`Error updating designation for faculty ID ${id}: ${error.message}`);
+    res.status(500).json({            
+      message: "An error occurred while updating the designation.",
+      error: error.message,
+      status: 500
+    });
+  }
+};

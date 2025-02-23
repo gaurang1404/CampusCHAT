@@ -32,6 +32,7 @@ const facultySchema = new mongoose.Schema({
     required: [true, "Password is required"],
     minlength: [8, "Password should be at least 8 characters"], // Enforce a minimum length of 8 for security    
   },
+  
   institutionDomain: {
     type: String,
     required: [true, "Institution domain is required"],

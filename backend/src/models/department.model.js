@@ -35,8 +35,7 @@ const departmentSchema = new mongoose.Schema({
     },
 
     dateEstablished: {
-      type: Date,
-      default: Date.now
+      type: String,      
     },
 
     location: {

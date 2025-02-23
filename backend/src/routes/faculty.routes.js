@@ -5,6 +5,7 @@ import {
   getFacultyById,
   updateFaculty,
   deleteFaculty,
+  updateFacultyDesignation,
 } from "../controllers/faculty.controller.js";
 import { authenticateJWT } from "../middlewares/auth.middleware.js";
 import { rateLimiter } from "../middlewares/rate.middleware.js";
@@ -22,6 +23,9 @@ router.get("/:id", authenticateJWT, getFacultyById);
 
 // Route to update faculty details (protected)
 router.put("/:id", authenticateJWT, updateFaculty);
+
+// Route to update faculty designation (protected)
+router.patch("/:id/designation", authenticateJWT, updateFacultyDesignation);
 
 // Route to delete a faculty (protected)
 router.delete("/:id", authenticateJWT, deleteFaculty);

@@ -121,7 +121,7 @@ export const addFaculty = async (req, res) => {
 // Get All Faculties
 export const getFaculties = async (req, res) => {
   try {
-    const faculties = await Faculty.find().populate("departmentId");
+    const faculties = await Faculty.find().populate("departmentId").populate("sections");
     res.status(200).json({ faculties, status: 200 });
   } catch (error) {
     logger.error(`Error fetching faculties: ${error.message}`);
@@ -132,7 +132,7 @@ export const getFaculties = async (req, res) => {
 // Get Faculty by ID
 export const getFacultyById = async (req, res) => {
   try {
-    const faculty = await Faculty.findById(req.params.id).populate("departmentId");
+    const faculty = await Faculty.findById(req.params.id).populate("departmentId").populate("sections");
     if (!faculty) {
       return res.status(404).json({ message: "Faculty not found", status: 404 });
     }

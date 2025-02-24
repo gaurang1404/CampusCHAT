@@ -120,59 +120,57 @@ export const deleteSection = async (req, res) => {
     }
 };
 
-// Add Course Faculty Mapping to a Section with validations for Course and Faculty
 export const addCourseFacultyMapping = async (req, res) => {
     try {
         const { sectionId, courseId, facultyId } = req.body;
 
-        // Validate required fields
         if (!sectionId || !courseId || !facultyId) {
             const errorMessage = "Section ID, Course ID and Faculty ID are required";
-            logger.warn(`${new Date().toISOString()} - Warn: ${errorMessage}`);
+            logger.warn(errorMessage);
             return res.status(400).json({ message: errorMessage });
         }
 
-        // Validate Course existence
         const course = await Course.findById(courseId);
         if (!course) {
             logger.error(`Course not found for courseId: ${courseId}`);
             return res.status(404).json({ message: "Course not found" });
         }
 
-        // Validate Faculty existence
         const faculty = await Faculty.findById(facultyId);
         if (!faculty) {
             logger.error(`Faculty not found for facultyId: ${facultyId}`);
             return res.status(404).json({ message: "Faculty not found" });
         }
 
-        console.log(course.departmentId + " " + faculty.departmentId);
-        
-        if(!course.departmentId.equals(faculty.departmentId)){
+        if (!course.departmentId.equals(faculty.departmentId)) {
             const errorMessage = "Faculty should belong to same department that offers this course";
-            logger.warn(`${new Date().toISOString()} - Warn: ${errorMessage}`);
+            logger.warn(errorMessage);
             return res.status(400).json({ message: errorMessage });
         }
 
-        // Find the section by ID
         const section = await Section.findById(sectionId);
         if (!section) {
             logger.error(`Section not found for sectionId: ${sectionId}`);
             return res.status(404).json({ message: "Section not found" });
         }
 
-        // Check if mapping already exists
-        const mappingExists = section.courseFacultyMappings.some(mapping => {
-            return mapping.courseId.toString() === courseId && mapping.facultyId.toString() === facultyId;
-        });
+        const mappingExists = section.courseFacultyMappings.some(mapping => 
+            mapping.courseId.toString() === courseId && mapping.facultyId.toString() === facultyId
+        );
         if (mappingExists) {
             logger.warn(`Mapping already exists for courseId: ${courseId} and facultyId: ${facultyId} in section: ${sectionId}`);
             return res.status(400).json({ message: "Mapping already exists for this course and faculty in the section" });
         }
 
-        // Add new mapping
+        // Add new mapping to the section
         section.courseFacultyMappings.push({ courseId, facultyId });
         await section.save();
+
+        // Add sectionId to faculty's sections array if not already present
+        if (!faculty.sections.includes(sectionId)) {
+            faculty.sections.push(sectionId);
+            await faculty.save();
+        }
 
         logger.info(`Added course-faculty mapping for courseId: ${courseId} and facultyId: ${facultyId} in section: ${sectionId}`);
         res.status(200).json({ message: "Course faculty mapping added successfully", section });
@@ -184,10 +182,10 @@ export const addCourseFacultyMapping = async (req, res) => {
 
 export const deleteCourseFacultyMapping = async (req, res) => {
     try {
-        const { sectionId, courseId, facultyId } = req.body;
+        const { sectionId, mappingId } = req.body;
 
-        if (!sectionId || !courseId || !facultyId) {
-            const errorMessage = "Missing required fields: sectionId, courseId, facultyId";
+        if (!sectionId || !mappingId) {
+            const errorMessage = "Missing required fields: sectionId, mappingId";
             logger.warn(errorMessage);
             return res.status(400).json({ message: errorMessage });
         }
@@ -198,20 +196,30 @@ export const deleteCourseFacultyMapping = async (req, res) => {
             return res.status(404).json({ message: "Section not found" });
         }
 
-        const initialLength = section.courseFacultyMappings.length;
-        section.courseFacultyMappings = section.courseFacultyMappings.filter(mapping => 
-            !(mapping.courseId.toString() === courseId && mapping.facultyId.toString() === facultyId)
-        );
-
-        if (section.courseFacultyMappings.length === initialLength) {
-            const errorMessage = `Mapping not found for courseId: ${courseId} and facultyId: ${facultyId} in section: ${sectionId}`;
+        const mapping = section.courseFacultyMappings.find(m => m._id.toString() === mappingId);
+        if (!mapping) {
+            const errorMessage = `Mapping not found for mappingId: ${mappingId} in section: ${sectionId}`;
             logger.warn(errorMessage);
             return res.status(400).json({ message: errorMessage });
         }
 
+        // Remove the mapping
+        section.courseFacultyMappings = section.courseFacultyMappings.filter(m => m._id.toString() !== mappingId);
         await section.save();
 
-        logger.info(`Removed course-faculty mapping for courseId: ${courseId} and facultyId: ${facultyId} from section: ${sectionId}`);
+        // Check if the faculty has any other course mappings in the section
+        const faculty = await Faculty.findById(mapping.facultyId);
+        if (faculty) {
+            const hasOtherMappings = section.courseFacultyMappings.some(m => m.facultyId.toString() === faculty._id.toString());
+
+            // Remove sectionId from faculty if no other mappings exist in this section
+            if (!hasOtherMappings) {
+                faculty.sections = faculty.sections.filter(s => s.toString() !== sectionId);
+                await faculty.save();
+            }
+        }
+
+        logger.info(`Removed course-faculty mapping with mappingId: ${mappingId} from section: ${sectionId}`);
         res.status(200).json({ message: "Course faculty mapping removed successfully", section });
     } catch (error) {
         logger.error(`Error removing course faculty mapping: ${error.message}`);

@@ -35,8 +35,7 @@ const facultySchema = new mongoose.Schema({
   
   institutionDomain: {
     type: String,
-    required: [true, "Institution domain is required"],
-    unique: true,
+    required: [true, "Institution domain is required"],    
     match: [/^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/, "Invalid domain format"], // Ensure domain format is correct
   },
 
@@ -58,6 +57,11 @@ const facultySchema = new mongoose.Schema({
     ref: "Department",
     required: [true, "Department is required"],
   },
+
+  sections: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Section",    
+  }],
 
   designation: {
     type: String,

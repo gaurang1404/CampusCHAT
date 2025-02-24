@@ -25,7 +25,7 @@ export const registerAdmin = async (req, res) => {
     if (!email || !firstName || !lastName || !password || !institutionName || !institutionDomain) {
       const errorMessage = "All fields are required";
       logger.warn(`${new Date().toISOString()} - Warn: ${errorMessage}`);
-      return res.status(400).json({ message: errorMessage, status: 400 });
+      return res.status(400).json({ message: errorMessage, data: [], code: 400 });
     }
 
     // Email format validation
@@ -33,29 +33,29 @@ export const registerAdmin = async (req, res) => {
     if (!emailRegex.test(email)) {
       const errorMessage = "Please provide a valid email address";
       logger.warn(`${new Date().toISOString()} - Warn: ${errorMessage}`);
-      return res.status(400).json({ message: errorMessage, status: 400 });
+      return res.status(400).json({ message: errorMessage, data: [], code: 400 });
     }
 
     // Check if the email matches the institution domain
     if (!email.endsWith(`@${institutionDomain}`)) {
       const errorMessage = "Email must belong to the institution domain";
       logger.warn(`${new Date().toISOString()} - Warn: ${errorMessage}`);
-      return res.status(400).json({ message: errorMessage, status: 400 });
+      return res.status(400).json({ message: errorMessage, data: [], code: 400 });
     }
 
     // Password length validation
     if (password.length < 8) {
       const errorMessage = "Password should be at least 8 characters";
       logger.warn(`${new Date().toISOString()} - Warn: ${errorMessage}`);
-      return res.status(400).json({ message: errorMessage, status: 400 });
+      return res.status(400).json({ message: errorMessage, data: [], code: 400 });
     }
 
     // Check if the email already exists in the database
-    const existingAdmin = await Admin.findOne({ collegeEmail: email });
+    const existingAdmin = await Admin.findOne({ email: email });
     if (existingAdmin) {
       const errorMessage = "Admin with this email already exists";
       logger.warn(`${new Date().toISOString()} - Warn: ${errorMessage}`);
-      return res.status(400).json({ message: errorMessage, status: 400 });
+      return res.status(400).json({ message: errorMessage, data: [], code: 400 });
     }
 
     // Hash the password securely
@@ -65,7 +65,7 @@ export const registerAdmin = async (req, res) => {
     const newAdmin = new Admin({
       firstName,
       lastName,
-      collegeEmail: email,
+      email,
       password: hashedPassword,
       institutionName,
       institutionDomain,
@@ -78,17 +78,16 @@ export const registerAdmin = async (req, res) => {
     const successMessage = "Admin registered successfully!";
     logger.info(`${new Date().toISOString()} - Success: ${successMessage}`);
     
-    return res.status(201).json({ message: successMessage, status: 201 });
+    return res.status(201).json({ message: successMessage, data: [], code: 201 });
 
   } catch (error) {
     // Log error with timestamp
     logger.error(`${new Date().toISOString()} - Error: Error registering admin - ${error.message}`);
 
     // General error handling for Mongoose-related issues
-    return res.status(500).json({ message: "Internal Server Error", status: 500 });
+    return res.status(500).json({ message: "Internal Server Error", data: [], code: 500 });
   }
 };
-
 
 export const loginAdmin = async (req, res) => {
   try {
@@ -98,7 +97,7 @@ export const loginAdmin = async (req, res) => {
     if (!email || !password) {
       const errorMessage = 'Email and password are required';
       logger.error(`${new Date().toISOString()} - Error: ${errorMessage}`);
-      return res.status(400).json({ message: errorMessage, status: 400 });
+      return res.status(400).json({ message: errorMessage, data: [], code: 400 });
     }
 
     // Find the admin by email
@@ -106,7 +105,7 @@ export const loginAdmin = async (req, res) => {
     if (!admin) {
       const errorMessage = 'Admin not found';
       logger.error(`${new Date().toISOString()} - Error: ${errorMessage}`);
-      return res.status(404).json({ message: errorMessage, status: 404 });
+      return res.status(404).json({ message: errorMessage, data: [], code: 404 });
     }
 
     // Compare the provided password with the stored hashed password
@@ -114,28 +113,28 @@ export const loginAdmin = async (req, res) => {
     if (!match) {
       const errorMessage = 'Incorrect password';
       logger.error(`${new Date().toISOString()} - Error: ${errorMessage}`);
-      return res.status(401).json({ message: errorMessage, status: 401 });
+      return res.status(401).json({ message: errorMessage, data: [], code: 401 });
     }
 
     // Create JWT token
     const token = jwt.sign(
-      { userId: admin._id, email: admin.collegeEmail, role: "Admin" },
+      { userId: admin._id, email: admin.email, role: "Admin", institutionDomain: admin.institutionDomain },
       process.env.JWT_SECRET_KEY, // Ensure you have a secret key stored in your environment variables
-      { expiresIn: '30d' } // Token expires in 1 hour
+      { expiresIn: '30d' } // Token expires in 30 days
     );
 
     // Send success response with token
     logger.info(`${new Date().toISOString()} - Success: Admin logged in successfully`);
     return res.status(200).json({
       message: 'Login successful',
-      token: token,
-      status: 200
+      data: { token },
+      code: 200
     });
 
   } catch (error) {
     // Log error with timestamp
     logger.error(`${new Date().toISOString()} - Error: Error logging in - ${error.message}`);
-    return res.status(500).json({ message: 'Internal Server Error', status: 500 });
+    return res.status(500).json({ message: 'Internal Server Error', data: [], code: 500 });
   }
 };
 
@@ -148,7 +147,7 @@ export const updateAdmin = async (req, res) => {
     if (!adminId) {
       const errorMessage = "Admin ID is required";
       logger.warn(`${new Date().toISOString()} - Warn: ${errorMessage}`);
-      return res.status(400).json({ message: errorMessage, status: 400 });
+      return res.status(400).json({ message: errorMessage, data: [], code: 400 });
     }
 
     // Fetch the existing admin details
@@ -156,16 +155,16 @@ export const updateAdmin = async (req, res) => {
     if (!admin) {
       const errorMessage = "Admin not found";
       logger.warn(`${new Date().toISOString()} - Warn: ${errorMessage}`);
-      return res.status(404).json({ message: errorMessage, status: 404 });
+      return res.status(404).json({ message: errorMessage, data: [], code: 404 });
     }
 
     // Prevent email and domain duplication
-    if (email && email !== admin.collegeEmail) {
-      const existingEmail = await Admin.findOne({ collegeEmail: email });
+    if (email && email !== admin.email) {
+      const existingEmail = await Admin.findOne({ email: email });
       if (existingEmail) {
         const errorMessage = "Another admin already uses this email";
         logger.warn(`${new Date().toISOString()} - Warn: ${errorMessage}`);
-        return res.status(400).json({ message: errorMessage, status: 400 });
+        return res.status(400).json({ message: errorMessage, data: [], code: 400 });
       }
     }
 
@@ -174,7 +173,7 @@ export const updateAdmin = async (req, res) => {
       if (existingDomain) {
         const errorMessage = "Another admin already registered this institution domain";
         logger.warn(`${new Date().toISOString()} - Warn: ${errorMessage}`);
-        return res.status(400).json({ message: errorMessage, status: 400 });
+        return res.status(400).json({ message: errorMessage, data: [], code: 400 });
       }
     }
 
@@ -182,13 +181,13 @@ export const updateAdmin = async (req, res) => {
     if (email && institutionDomain && !email.endsWith(`@${institutionDomain}`)) {
       const errorMessage = "Email must match the institution domain";
       logger.warn(`${new Date().toISOString()} - Warn: ${errorMessage}`);
-      return res.status(400).json({ message: errorMessage, status: 400 });
+      return res.status(400).json({ message: errorMessage, data: [], code: 400 });
     }
 
     // Update fields
     if (firstName) admin.firstName = firstName;
     if (lastName) admin.lastName = lastName;
-    if (email) admin.collegeEmail = email;
+    if (email) admin.email = email;
     if (institutionName) admin.institutionName = institutionName;
     if (institutionDomain) admin.institutionDomain = institutionDomain;
 
@@ -197,7 +196,7 @@ export const updateAdmin = async (req, res) => {
       if (password.length < 8) {
         const errorMessage = "Password should be at least 8 characters";
         logger.warn(`${new Date().toISOString()} - Warn: ${errorMessage}`);
-        return res.status(400).json({ message: errorMessage, status: 400 });
+        return res.status(400).json({ message: errorMessage, data: [], code: 400 });
       }
       admin.password = await bcrypt.hash(password, 10);
     }
@@ -209,12 +208,11 @@ export const updateAdmin = async (req, res) => {
     const successMessage = "Admin details updated successfully!";
     logger.info(`${new Date().toISOString()} - Success: ${successMessage}`);
     
-    return res.status(200).json({ message: successMessage, status: 200 });
+    return res.status(200).json({ message: successMessage, data: [], code: 200 });
 
   } catch (error) {
     // Log error
     logger.error(`${new Date().toISOString()} - Error: Error updating admin - ${error.message}`);
-    return res.status(500).json({ message: "Internal Server Error", status: 500 });
+    return res.status(500).json({ message: "Internal Server Error", data: [], code: 500 });
   }
 };
-

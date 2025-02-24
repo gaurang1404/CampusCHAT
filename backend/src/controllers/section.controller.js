@@ -26,19 +26,30 @@ export const addSection = async (req, res) => {
     try {
         const { name, semesterId } = req.body;
 
-        const semester = await Semester.findById(semesterId);
+        const semester = await Semester.findOne({ _id: semesterId, institutionDomain: req.institutionDomain });
+
         if (!semester) {
             logger.error(`Semester not found for semesterId: ${semesterId}`);
-            return res.status(404).json({ message: "Semester not found" });
+            return res.status(404).json({
+                message: "Semester not found",
+                data: [],
+                code: 404
+            });
         }
 
-        const existingSection = await Section.findOne({ name, semesterId });
+        const existingSection = await Section.findOne({ name, semesterId, institutionDomain: req.institutionDomain });
+
         if (existingSection) {
             logger.error(`Section with name '${name}' already exists in semester: ${semesterId}`);
-            return res.status(400).json({ message: "Section with this name already exists in the semester" });
+            return res.status(400).json({
+                message: "Section with this name already exists in the semester",
+                data: [],
+                code: 400
+            });
         }
 
-        const newSection = new Section({ name, semesterId });
+        const newSection = new Section({ name, semesterId, institutionDomain: req.institutionDomain });
+
         await newSection.save();
 
         semester.sections.push(newSection._id);
@@ -46,66 +57,114 @@ export const addSection = async (req, res) => {
 
         logger.info(`New section added: ${newSection.name} under semester: ${semesterId}`);
 
-        res.status(201).json({
+        return res.status(201).json({
             message: "Section added successfully",
-            section: newSection,
+            data: { section: newSection },
+            code: 201
         });
     } catch (error) {
         logger.error(`Error adding section: ${error.message}`);
-        res.status(500).json({ message: "Internal Server Error", error: error.message });
+        return res.status(500).json({
+            message: "Internal Server Error",
+            data: [],
+            code: 500
+        });
     }
 };
 
 export const getSections = async (req, res) => {
     try {
-        const sections = await Section.find()
-            .populate("semesterId")  // Populate semester name
+        const sections = await Section.find({ institutionDomain: req.institutionDomain })
+            .populate("semesterId")
             .populate("students")
             .populate("courseFacultyMappings.courseId")
             .populate("courseFacultyMappings.facultyId");
 
-        res.status(200).json({ sections });
+        return res.status(200).json({
+            message: "Sections fetched successfully",
+            data: { sections },
+            code: 200
+        });
     } catch (error) {
         logger.error(`Error fetching sections: ${error.message}`);
-        res.status(500).json({ message: "Internal Server Error", error: error.message });
+        return res.status(500).json({
+            message: "Internal Server Error",
+            data: [],
+            code: 500
+        });
     }
 };
 
-
 export const getSectionById = async (req, res) => {
     try {
-        const section = await Section.findById(req.params.id).populate("semesterId")  // Populate semester name
+        const section = await Section.findOne({ _id: req.params.id, institutionDomain: req.institutionDomain })
+            .populate("semesterId")
             .populate("students")
             .populate("courseFacultyMappings.courseId")
             .populate("courseFacultyMappings.facultyId");
+
         if (!section) {
-            return res.status(404).json({ message: "Section not found" });
+            return res.status(404).json({
+                message: "Section not found",
+                data: [],
+                code: 404
+            });
         }
-        res.status(200).json({ section });
+        return res.status(200).json({
+            message: "Section fetched successfully",
+            data: { section },
+            code: 200
+        });
     } catch (error) {
         logger.error(`Error fetching section: ${error.message}`);
-        res.status(500).json({ message: "Internal Server Error", error: error.message });
+        return res.status(500).json({
+            message: "Internal Server Error",
+            data: [],
+            code: 500
+        });
     }
 };
 
 export const updateSection = async (req, res) => {
     try {
-        const updatedSection = await Section.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        const updatedSection = await Section.findOneAndUpdate(
+            { _id: req.params.id, institutionDomain: req.institutionDomain },
+            req.body,
+            { new: true }
+        );
+
         if (!updatedSection) {
-            return res.status(404).json({ message: "Section not found" });
+            return res.status(404).json({
+                message: "Section not found",
+                data: [],
+                code: 404
+            });
         }
-        res.status(200).json({ message: "Section updated successfully", section: updatedSection });
+        return res.status(200).json({
+            message: "Section updated successfully",
+            data: { section: updatedSection },
+            code: 200
+        });
     } catch (error) {
         logger.error(`Error updating section: ${error.message}`);
-        res.status(500).json({ message: "Internal Server Error", error: error.message });
+        return res.status(500).json({
+            message: "Internal Server Error",
+            data: [],
+            code: 500
+        });
     }
 };
 
 export const deleteSection = async (req, res) => {
     try {
-        const deletedSection = await Section.findByIdAndDelete(req.params.id);
+        const deletedSection = await Section.findOneAndDelete({ _id: req.params.id, institutionDomain: req.institutionDomain });
+
         if (!deletedSection) {
-            return res.status(404).json({ message: "Section not found" });
+            return res.status(404).json({
+                message: "Section not found",
+                data: [],
+                code: 404
+            });
         }
 
         await Semester.findByIdAndUpdate(deletedSection.semesterId, {
@@ -113,10 +172,18 @@ export const deleteSection = async (req, res) => {
         });
 
         logger.info(`Section deleted: ${deletedSection.name}`);
-        res.status(200).json({ message: "Section deleted successfully" });
+        return res.status(200).json({
+            message: "Section deleted successfully",
+            data: [],
+            code: 200
+        });
     } catch (error) {
         logger.error(`Error deleting section: ${error.message}`);
-        res.status(500).json({ message: "Internal Server Error", error: error.message });
+        return res.status(500).json({
+            message: "Internal Server Error",
+            data: [],
+            code: 500
+        });
     }
 };
 
@@ -127,39 +194,64 @@ export const addCourseFacultyMapping = async (req, res) => {
         if (!sectionId || !courseId || !facultyId) {
             const errorMessage = "Section ID, Course ID and Faculty ID are required";
             logger.warn(errorMessage);
-            return res.status(400).json({ message: errorMessage });
+            return res.status(400).json({
+                message: errorMessage,
+                data: [],
+                code: 400
+            });
         }
 
-        const course = await Course.findById(courseId);
+        const course = await Course.findOne({ courseId, institutionDomain: req.institutionDomain });
         if (!course) {
             logger.error(`Course not found for courseId: ${courseId}`);
-            return res.status(404).json({ message: "Course not found" });
+            return res.status(404).json({
+                message: "Course not found",
+                data: [],
+                code: 404
+            });
         }
 
-        const faculty = await Faculty.findById(facultyId);
+        // Note: Corrected "findByOne" to "findOne"
+        const faculty = await Faculty.findOne({ _id: facultyId, institutionDomain: req.institutionDomain });
         if (!faculty) {
             logger.error(`Faculty not found for facultyId: ${facultyId}`);
-            return res.status(404).json({ message: "Faculty not found" });
+            return res.status(404).json({
+                message: "Faculty not found",
+                data: [],
+                code: 404
+            });
         }
 
         if (!course.departmentId.equals(faculty.departmentId)) {
             const errorMessage = "Faculty should belong to same department that offers this course";
             logger.warn(errorMessage);
-            return res.status(400).json({ message: errorMessage });
+            return res.status(400).json({
+                message: errorMessage,
+                data: [],
+                code: 400
+            });
         }
 
-        const section = await Section.findById(sectionId);
+        const section = await Section.findOne({ _id: sectionId, institutionDomain: req.institutionDomain });
         if (!section) {
             logger.error(`Section not found for sectionId: ${sectionId}`);
-            return res.status(404).json({ message: "Section not found" });
+            return res.status(404).json({
+                message: "Section not found",
+                data: [],
+                code: 404
+            });
         }
 
-        const mappingExists = section.courseFacultyMappings.some(mapping => 
+        const mappingExists = section.courseFacultyMappings.some(mapping =>
             mapping.courseId.toString() === courseId && mapping.facultyId.toString() === facultyId
         );
         if (mappingExists) {
             logger.warn(`Mapping already exists for courseId: ${courseId} and facultyId: ${facultyId} in section: ${sectionId}`);
-            return res.status(400).json({ message: "Mapping already exists for this course and faculty in the section" });
+            return res.status(400).json({
+                message: "Mapping already exists for this course and faculty in the section",
+                data: [],
+                code: 400
+            });
         }
 
         // Add new mapping to the section
@@ -173,10 +265,18 @@ export const addCourseFacultyMapping = async (req, res) => {
         }
 
         logger.info(`Added course-faculty mapping for courseId: ${courseId} and facultyId: ${facultyId} in section: ${sectionId}`);
-        res.status(200).json({ message: "Course faculty mapping added successfully", section });
+        return res.status(200).json({
+            message: "Course faculty mapping added successfully",
+            data: { section },
+            code: 200
+        });
     } catch (error) {
         logger.error(`Error adding course faculty mapping: ${error.message}`);
-        res.status(500).json({ message: "Internal Server Error", error: error.message });
+        return res.status(500).json({
+            message: "Internal Server Error",
+            data: [],
+            code: 500
+        });
     }
 };
 
@@ -187,20 +287,33 @@ export const deleteCourseFacultyMapping = async (req, res) => {
         if (!sectionId || !mappingId) {
             const errorMessage = "Missing required fields: sectionId, mappingId";
             logger.warn(errorMessage);
-            return res.status(400).json({ message: errorMessage });
+            return res.status(400).json({
+                message: errorMessage,
+                data: [],
+                code: 400
+            });
         }
 
-        const section = await Section.findById(sectionId);
+        const section = await Section.findOne({ _id: sectionId, institutionDomain: req.institutionDomain });
+
         if (!section) {
             logger.error(`Section not found for sectionId: ${sectionId}`);
-            return res.status(404).json({ message: "Section not found" });
+            return res.status(404).json({
+                message: "Section not found",
+                data: [],
+                code: 404
+            });
         }
 
         const mapping = section.courseFacultyMappings.find(m => m._id.toString() === mappingId);
         if (!mapping) {
             const errorMessage = `Mapping not found for mappingId: ${mappingId} in section: ${sectionId}`;
             logger.warn(errorMessage);
-            return res.status(400).json({ message: errorMessage });
+            return res.status(400).json({
+                message: errorMessage,
+                data: [],
+                code: 400
+            });
         }
 
         // Remove the mapping
@@ -211,7 +324,6 @@ export const deleteCourseFacultyMapping = async (req, res) => {
         const faculty = await Faculty.findById(mapping.facultyId);
         if (faculty) {
             const hasOtherMappings = section.courseFacultyMappings.some(m => m.facultyId.toString() === faculty._id.toString());
-
             // Remove sectionId from faculty if no other mappings exist in this section
             if (!hasOtherMappings) {
                 faculty.sections = faculty.sections.filter(s => s.toString() !== sectionId);
@@ -220,10 +332,17 @@ export const deleteCourseFacultyMapping = async (req, res) => {
         }
 
         logger.info(`Removed course-faculty mapping with mappingId: ${mappingId} from section: ${sectionId}`);
-        res.status(200).json({ message: "Course faculty mapping removed successfully", section });
+        return res.status(200).json({
+            message: "Course faculty mapping removed successfully",
+            data: { section },
+            code: 200
+        });
     } catch (error) {
         logger.error(`Error removing course faculty mapping: ${error.message}`);
-        res.status(500).json({ message: "Internal Server Error", error: error.message });
+        return res.status(500).json({
+            message: "Internal Server Error",
+            data: [],
+            code: 500
+        });
     }
 };
-

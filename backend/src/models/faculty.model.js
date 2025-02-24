@@ -35,7 +35,7 @@ const facultySchema = new mongoose.Schema({
   
   institutionDomain: {
     type: String,
-    required: [true, "Institution domain is required"],    
+    required: [true, "Institution domain is required"],      
     match: [/^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/, "Invalid domain format"], // Ensure domain format is correct
   },
 

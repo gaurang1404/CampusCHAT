@@ -16,6 +16,7 @@ export const authenticateJWT = (req, res, next) => {
     req.userId = decoded.userId;
     req.role = decoded.role;
     req.email = decoded.email;
+    req.institutionDomain = decoded.institutionDomain;
     next(); 
   } catch (error) {
     res.status(400).json({ message: "Invalid token." });

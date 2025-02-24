@@ -10,7 +10,7 @@ const courseSchema = new Schema({
         trim: true,
         uppercase: true,
     },
-    
+
     name: {
         type: String,
         required: true,
@@ -35,11 +35,17 @@ const courseSchema = new Schema({
         min: 1,
         max: 6,
     },
-       
+
     status: {
         type: String,
         enum: ["Open", "Closed", "Waitlisted"],
         default: "Open",
+    },
+
+    institutionDomain: {
+        type: String,
+        required: [true, "Institution domain is required"],
+        match: [/^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/, "Invalid domain format"], // Ensure domain format is correct
     },
 },
     { timestamps: true }

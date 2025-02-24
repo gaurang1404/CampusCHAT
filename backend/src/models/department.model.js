@@ -9,7 +9,8 @@ const departmentSchema = new mongoose.Schema({
 
     institutionDomain: {
       type: String,
-      required: true,
+      required: [true, "Institution domain is required"],      
+      match: [/^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/, "Invalid domain format"], // Ensure domain format is correct
     },
 
     headOfDepartment: {

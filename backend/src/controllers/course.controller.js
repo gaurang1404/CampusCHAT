@@ -17,41 +17,34 @@ const logger = winston.createLogger({
 
 export const addCourse = async (req, res) => {
   try {
-    const { courseCode, name, description, departmentId, credits  } = req.body;
+    const { courseCode, name, description, departmentId, credits } = req.body;
 
-    // Validate required fields
-    if (!courseCode || !name || !description || !departmentId || !credits) {
-      const errorMessage = "All fields are required";
-      logger.warn(`${new Date().toISOString()} - Warn: ${errorMessage}`);
-      return res.status(400).json({ message: errorMessage, status: 400 });
+    if (!courseCode || !name || !description || !departmentId || !credits ) {
+      return res.status(400).json({ message: "All fields are required", status: 400 });
     }
 
-    // Check if course code already exists
-    const existingCourse = await Course.findOne({ courseCode });
+    const existingCourse = await Course.findOne({ courseCode, institutionDomain: req.institutionDomain });
+
     if (existingCourse) {
-      logger.warn(`Course with code ${courseCode} already exists`);
       return res.status(400).json({ message: "Course with this code already exists", status: 400 });
     }
 
-    // Validate Department
     const department = await Department.findById(departmentId);
     if (!department) {
       return res.status(404).json({ message: "Department not found", status: 404 });
     }
 
-    // Create new course
     const newCourse = new Course({
       courseCode,
       name,
       description,
-      departmentId,    
-      credits     
+      departmentId,
+      credits,
+      institutionDomain: req.institutionDomain,
     });
 
-    // Save to DB
     await newCourse.save();
-
-    logger.info(`New course added successfully: ${newCourse.name} (Code: ${newCourse.courseCode})`);
+    logger.info(`New course added: ${newCourse.name} (${newCourse.courseCode})`);
     res.status(201).json({ message: "Course added successfully", course: newCourse, status: 201 });
   } catch (error) {
     logger.error(`Error adding course: ${error.message}`);
@@ -61,7 +54,7 @@ export const addCourse = async (req, res) => {
 
 export const getCourses = async (req, res) => {
   try {
-    const courses = await Course.find().populate("departmentId");
+    const courses = await Course.find({ institutionDomain: req.institutionDomain }).populate("departmentId");
     res.status(200).json({ courses, status: 200 });
   } catch (error) {
     logger.error(`Error fetching courses: ${error.message}`);
@@ -71,7 +64,7 @@ export const getCourses = async (req, res) => {
 
 export const getCourseById = async (req, res) => {
   try {
-    const course = await Course.findById(req.params.id).populate("departmentId");
+    const course = await Course.findOne({ _id: req.params.id, institutionDomain: req.institutionDomain }).populate("departmentId");
     if (!course) {
       return res.status(404).json({ message: "Course not found", status: 404 });
     }
@@ -87,32 +80,27 @@ export const updateCourse = async (req, res) => {
     const { id } = req.params;
     const { courseCode, name, description, departmentId, credits } = req.body;
 
-    // Validate required fields
     if (!courseCode || !name || !description || !departmentId || !credits) {
       return res.status(400).json({ message: "All fields are required", status: 400 });
     }
 
-    // Check if course exists
-    const course = await Course.findById(id);
+    const course = await Course.findOne({ _id: id, institutionDomain: req.institutionDomain });
     if (!course) {
       return res.status(404).json({ message: "Course not found", status: 404 });
     }
 
-    // Check if course code is unique when updating
     if (course.courseCode !== courseCode) {
-      const existingCourse = await Course.findOne({ courseCode });
+      const existingCourse = await Course.findOne({ courseCode, institutionDomain: req.institutionDomain });
       if (existingCourse) {
         return res.status(400).json({ message: "Course with this code already exists", status: 400 });
       }
     }
 
-    // Check if department exists
     const department = await Department.findById(departmentId);
     if (!department) {
       return res.status(404).json({ message: "Department not found", status: 404 });
     }
 
-    // Update course details
     course.courseCode = courseCode;
     course.name = name;
     course.description = description;
@@ -120,8 +108,7 @@ export const updateCourse = async (req, res) => {
     course.credits = credits;
 
     await course.save();
-
-    logger.info(`Course updated successfully: ${course.name} (Code: ${course.courseCode})`);
+    logger.info(`Course updated: ${course.name} (${course.courseCode})`);
     res.status(200).json({ message: "Course updated successfully", course, status: 200 });
   } catch (error) {
     logger.error(`Error updating course: ${error.message}`);
@@ -131,12 +118,12 @@ export const updateCourse = async (req, res) => {
 
 export const deleteCourse = async (req, res) => {
   try {
-    const deletedCourse = await Course.findByIdAndDelete(req.params.id);
+    const deletedCourse = await Course.findOneAndDelete({ _id: req.params.id, institutionDomain: req.institutionDomain });
     if (!deletedCourse) {
       return res.status(404).json({ message: "Course not found", status: 404 });
     }
 
-    logger.info(`Course deleted successfully: ${deletedCourse.name} (Code: ${deletedCourse.courseCode})`);
+    logger.info(`Course deleted: ${deletedCourse.name} (${deletedCourse.courseCode})`);
     res.status(200).json({ message: "Course deleted successfully", status: 200 });
   } catch (error) {
     logger.error(`Error deleting course: ${error.message}`);
@@ -149,26 +136,21 @@ export const updateCourseStatus = async (req, res) => {
     const { id } = req.params;
     const { status } = req.body;
 
-    // Validate status
     if (!["Open", "Closed", "Waitlisted"].includes(status)) {
-      const errorMessage = "Invalid status. Allowed values: Open, Closed, Waitlisted";
-      logger.error(`${new Date().toISOString()} - Warn: ${errorMessage}`);
-      return res.status(400).json({ message: errorMessage, status: 400 });
+      return res.status(400).json({ message: "Invalid status", status: 400 });
     }
 
-    // Find and update course status
-    const updatedCourse = await Course.findByIdAndUpdate(
-      id,
+    const updatedCourse = await Course.findOneAndUpdate(
+      { _id: id, institutionDomain: req.institutionDomain },
       { status },
       { new: true }
     );
 
     if (!updatedCourse) {
-      logger.warn(`Course not found for ID: ${id}`);
       return res.status(404).json({ message: "Course not found", status: 404 });
     }
 
-    logger.info(`Course status updated successfully: ${updatedCourse.name} (Code: ${updatedCourse.courseCode}) - New Status: ${status}`);
+    logger.info(`Course status updated: ${updatedCourse.name} (${updatedCourse.courseCode}) - New Status: ${status}`);
     res.status(200).json({ message: "Course status updated successfully", course: updatedCourse, status: 200 });
   } catch (error) {
     logger.error(`Error updating course status: ${error.message}`);
@@ -178,9 +160,8 @@ export const updateCourseStatus = async (req, res) => {
 
 export const getOpenCourses = async (req, res) => {
   try {
-    const openCourses = await Course.find({ status: "Open" }).populate("departmentId");
-
-    logger.info(`Fetched ${openCourses.length} open courses`);
+    const openCourses = await Course.find({ status: "Open", institutionDomain: req.institutionDomain }).populate("departmentId");
+    logger.info(`Open courses have been retreived for ${req.institutionDomain}`);
     res.status(200).json({ courses: openCourses, status: 200 });
   } catch (error) {
     logger.error(`Error fetching open courses: ${error.message}`);
@@ -190,9 +171,8 @@ export const getOpenCourses = async (req, res) => {
 
 export const getClosedCourses = async (req, res) => {
   try {
-    const closedCourses = await Course.find({ status: "Closed" }).populate("departmentId");
-
-    logger.info(`Fetched ${closedCourses.length} closed courses`);
+    const closedCourses = await Course.find({ status: "Closed", institutionDomain: req.institutionDomain }).populate("departmentId");
+    logger.info(`Closed courses have been retreived for ${req.institutionDomain}`);
     res.status(200).json({ courses: closedCourses, status: 200 });
   } catch (error) {
     logger.error(`Error fetching closed courses: ${error.message}`);
@@ -202,9 +182,8 @@ export const getClosedCourses = async (req, res) => {
 
 export const getWaitlistedCourses = async (req, res) => {
   try {
-    const waitlistedCourses = await Course.find({ status: "Waitlisted" }).populate("departmentId");
-
-    logger.info(`Fetched ${waitlistedCourses.length} waitlisted courses`);
+    const waitlistedCourses = await Course.find({ status: "Waitlisted", institutionDomain: req.institutionDomain }).populate("departmentId");
+    logger.info(`Waitlisted courses have been retreived for ${req.institutionDomain}`);
     res.status(200).json({ courses: waitlistedCourses, status: 200 });
   } catch (error) {
     logger.error(`Error fetching waitlisted courses: ${error.message}`);

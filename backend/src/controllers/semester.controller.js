@@ -23,7 +23,11 @@ export const addSemester = async (req, res) => {
         const department = await Department.findById(departmentId);
         if (!department) {
             logger.error(`Department not found for departmentId: ${departmentId}`);
-            return res.status(404).json({ message: "Department not found" });
+            return res.status(404).json({
+                message: "Department not found",
+                data: [],
+                code: 404
+            });
         }
 
         // Check if a semester with the same name or code already exists
@@ -32,12 +36,20 @@ export const addSemester = async (req, res) => {
 
         if (existingSemesterByName) {
             logger.warn(`Semester already exists with name: ${name}`);
-            return res.status(400).json({ message: "Semester with the same name already exists" });
+            return res.status(400).json({
+                message: "Semester with the same name already exists",
+                data: [],
+                code: 400
+            });
         }
 
         if (existingSemesterByCode) {
-            logger.warn(`Department already exists with code: ${semesterCode}`);
-            return res.status(400).json({ message: "Semester with the same code already exists" });
+            logger.warn(`Semester already exists with code: ${semesterCode}`);
+            return res.status(400).json({
+                message: "Semester with the same code already exists",
+                data: [],
+                code: 400
+            });
         }
 
         const newSemester = new Semester({
@@ -55,13 +67,18 @@ export const addSemester = async (req, res) => {
 
         logger.info(`New semester added successfully: ${newSemester.name} with code: ${newSemester.semesterCode}`);
 
-        res.status(201).json({
+        return res.status(201).json({
             message: "Semester added successfully",
-            semester: newSemester
+            data: { semester: newSemester },
+            code: 201
         });
     } catch (error) {
         logger.error(`Error adding semester: ${error.message}`);
-        res.status(500).json({ message: "Internal Server error", error: error.message });
+        return res.status(500).json({
+            message: "Internal Server Error",
+            data: [],
+            code: 500
+        });
     }
 };
 
@@ -69,10 +86,18 @@ export const addSemester = async (req, res) => {
 export const getSemesters = async (req, res) => {
     try {
         const semesters = await Semester.find().populate("departmentId");
-        res.status(200).json({ semesters });
+        return res.status(200).json({
+            message: "Semesters fetched successfully",
+            data: { semesters },
+            code: 200
+        });
     } catch (error) {
         logger.error(`Error fetching semesters: ${error.message}`);
-        res.status(500).json({ message: "Internal Server Error", error: error.message });
+        return res.status(500).json({
+            message: "Internal Server Error",
+            data: [],
+            code: 500
+        });
     }
 };
 
@@ -83,12 +108,24 @@ export const getSemesterById = async (req, res) => {
             .populate("departmentId")
             .populate("sections");
         if (!semester) {
-            return res.status(404).json({ message: "Semester not found" });
+            return res.status(404).json({
+                message: "Semester not found",
+                data: [],
+                code: 404
+            });
         }
-        res.status(200).json({ semester });
+        return res.status(200).json({
+            message: "Semester fetched successfully",
+            data: { semester },
+            code: 200
+        });
     } catch (error) {
         logger.error(`Error fetching semester: ${error.message}`);
-        res.status(500).json({ message: "Internal Server Error", error: error.message });
+        return res.status(500).json({
+            message: "Internal Server Error",
+            data: [],
+            code: 500
+        });
     }
 };
 
@@ -97,12 +134,24 @@ export const updateSemester = async (req, res) => {
     try {
         const updatedSemester = await Semester.findByIdAndUpdate(req.params.id, req.body, { new: true });
         if (!updatedSemester) {
-            return res.status(404).json({ message: "Semester not found" });
+            return res.status(404).json({
+                message: "Semester not found",
+                data: [],
+                code: 404
+            });
         }
-        res.status(200).json({ message: "Semester updated successfully", semester: updatedSemester });
+        return res.status(200).json({
+            message: "Semester updated successfully",
+            data: { semester: updatedSemester },
+            code: 200
+        });
     } catch (error) {
         logger.error(`Error updating semester: ${error.message}`);
-        res.status(500).json({ message: "Internal Server Error", error: error.message });
+        return res.status(500).json({
+            message: "Internal Server Error",
+            data: [],
+            code: 500
+        });
     }
 };
 
@@ -111,7 +160,11 @@ export const deleteSemester = async (req, res) => {
     try {
         const semester = await Semester.findById(req.params.id);
         if (!semester) {
-            return res.status(404).json({ message: "Semester not found" });
+            return res.status(404).json({
+                message: "Semester not found",
+                data: [],
+                code: 404
+            });
         }
 
         // Delete all sections associated with this semester
@@ -126,9 +179,17 @@ export const deleteSemester = async (req, res) => {
         await Semester.findByIdAndDelete(req.params.id);
 
         logger.info(`Semester deleted: ${semester.name} (${semester.semesterCode}), along with its sections.`);
-        res.status(200).json({ message: "Semester and its sections deleted successfully" });
+        return res.status(200).json({
+            message: "Semester and its sections deleted successfully",
+            data: [],
+            code: 200
+        });
     } catch (error) {
         logger.error(`Error deleting semester: ${error.message}`);
-        res.status(500).json({ message: "Internal Server Error", error: error.message });
+        return res.status(500).json({
+            message: "Internal Server Error",
+            data: [],
+            code: 500
+        });
     }
 };

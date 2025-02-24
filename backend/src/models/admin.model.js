@@ -14,7 +14,7 @@ const adminSchema = new mongoose.Schema({
     trim: true,
   },
 
-  collegeEmail: {
+  email: {
     type: String,
     required: [true, "College email is required"],
     unique: true,
@@ -33,7 +33,6 @@ const adminSchema = new mongoose.Schema({
     required: [true, "Password is required"],
     minlength: [8, "Password should be at least 8 characters"], // Enforce a minimum length of 8 for security    
   },
-
 
   institutionName: {
     type: String,

@@ -7,6 +7,12 @@ const sectionSchema = new mongoose.Schema({
         trim: true
     },
 
+    institutionDomain: {
+        type: String,
+        required: [true, "Institution domain is required"],
+        match: [/^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/, "Invalid domain format"], // Ensure domain format is correct
+    },
+
     semesterId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Semester",

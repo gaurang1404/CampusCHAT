@@ -37,7 +37,7 @@ router.get("/:id", authenticateJWT, getCourseById);
 router.patch("/:id/status", authenticateJWT, updateCourseStatus);
 
 // Route to update course details (protected)
-router.put("/:id", authenticateJWT, updateCourse);
+router.patch("/:id", authenticateJWT, updateCourse);
 
 // Route to delete a course (protected)
 router.delete("/:id", authenticateJWT, deleteCourse);

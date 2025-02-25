@@ -24,6 +24,20 @@ export const addDepartment = async (req, res) => {
       return res.status(400).json({ message: "All fields are required", status: 400 });
     }
 
+    // Check if a department exists with the same departmentCode and institutionDomain
+    const existingDepartment = await Department.findOne({
+      departmentCode,
+      institutionDomain: req.institutionDomain
+    });
+
+    if (existingDepartment) {
+      return res.status(409).json({
+        message: "A department with this code already exists in the institution",
+        data: [],
+        status: 409
+      });
+    }
+
     const newDepartment = new Department({
       name,
       institutionDomain: req.institutionDomain,
@@ -39,21 +53,23 @@ export const addDepartment = async (req, res) => {
     return res.status(201).json({
       message: "Department added successfully",
       data: { department: newDepartment },
-      code: 201
+      status: 201
     });
 
   } catch (error) {
     logger.error(`Error adding department: ${error.message}`);
     return res.status(500).json({
-      message: "Internal Server error",
+      message: "Internal Server Error",
       data: [],
-      code: 500
+      status: 500
     });
   }
 };
 
 export const getDepartments = async (req, res) => {
   try {
+    console.log(req.institutionDomain);
+
     const departments = await Department.find({ institutionDomain: req.institutionDomain })
       .populate("headOfDepartment")
       .populate("semesters");
@@ -102,9 +118,10 @@ export const getDepartmentById = async (req, res) => {
 export const updateDepartment = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, departmentCode, description, location, dateEstablished, headOfDepartment } = req.body;
+    const { name, departmentCode, description, location, dateEstablished } = req.body;
 
     const department = await Department.findOne({ _id: id, institutionDomain: req.institutionDomain });
+
     if (!department) {
       logger.warn(`Unauthorized update attempt by admin ${req.userId}`);
       return res.status(403).json({
@@ -112,14 +129,13 @@ export const updateDepartment = async (req, res) => {
         data: [],
         code: 403
       });
-    }    
-    
-    department.name = name || department.name;    
+    }
+
+    department.name = name || department.name;
     department.departmentCode = departmentCode || department.departmentCode
     department.description = description || department.description
     department.location = location || department.location
-    department.dateEstablished = department || department.dateEstablished
-    department.headOfDepartment = headOfDepartment || department.headOfDepartment
+    department.dateEstablished = dateEstablished || department.dateEstablished
 
     await department.save();
 
@@ -149,7 +165,7 @@ export const deleteDepartment = async (req, res) => {
         code: 404
       });
     }
-    
+
     await Student.deleteMany({ departmentId: department._id });
     await Faculty.deleteMany({ departmentId: department._id });
     await Course.deleteMany({ departmentId: department._id });

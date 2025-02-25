@@ -13,14 +13,13 @@ const facultySchema = new mongoose.Schema({
     trim: true,
   },
 
-  collegeEmail: {
+  email: {
     type: String,
     required: [true, "College email is required"],
     unique: true,
-    match: [/\S+@\S+\.\S+/, "Please provide a valid email address"], // Ensure correct email format
+    match: [/\S+@\S+\.\S+/, "Please provide a valid email address"], 
     validate: {
       validator: function (email) {
-        // Ensure the email domain matches the institution domain
         return this.institutionDomain && email.endsWith(`@${this.institutionDomain}`);
       },
       message: "Email must belong to the registered institution domain",
@@ -36,13 +35,12 @@ const facultySchema = new mongoose.Schema({
   institutionDomain: {
     type: String,
     required: [true, "Institution domain is required"],      
-    match: [/^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/, "Invalid domain format"], // Ensure domain format is correct
+    match: [/^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/, "Invalid domain format"]
   },
 
   facultyId: {
     type: String,
     required: [true, "ID is required"],
-    unique: true,
     trim: true
   },
 

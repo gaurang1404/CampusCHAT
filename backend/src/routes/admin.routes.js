@@ -12,6 +12,6 @@ router.post("/register", rateLimiter, registerAdmin);
 router.post("/login", loginAdmin);
 
 // Update Admin
-router.put("/:adminId", updateAdmin);
+router.put("/:adminId", authenticateJWT, updateAdmin);
 
 export default router;

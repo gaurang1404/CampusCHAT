@@ -22,7 +22,7 @@ router.get("/", authenticateJWT, getFaculties);
 router.get("/:id", authenticateJWT, getFacultyById);
 
 // Route to update faculty details (protected)
-router.put("/:id", authenticateJWT, updateFaculty);
+router.patch("/:id", authenticateJWT, updateFaculty);
 
 // Route to update faculty designation (protected)
 router.patch("/:id/designation", authenticateJWT, updateFacultyDesignation);

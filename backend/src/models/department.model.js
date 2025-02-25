@@ -3,14 +3,13 @@ import mongoose from "mongoose";
 const departmentSchema = new mongoose.Schema({
     name: {
       type: String,
-      required: [true, "Department name is required"],
-      unique: true,
+      required: [true, "Department name is required"],      
     },
 
     institutionDomain: {
       type: String,
       required: [true, "Institution domain is required"],      
-      match: [/^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/, "Invalid domain format"], // Ensure domain format is correct
+      match: [/^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/, "Invalid domain format"]
     },
 
     headOfDepartment: {
@@ -21,13 +20,12 @@ const departmentSchema = new mongoose.Schema({
     description: {
       type: String,
       trim: true,
-      maxlength: 500
+      maxlength: 1000
     },
 
     departmentCode: {
       type: String,
-      required: true,
-      unique: true
+      required: true,      
     },
 
     isActive: {

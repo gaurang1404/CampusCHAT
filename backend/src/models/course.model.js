@@ -5,10 +5,8 @@ const { Schema, model } = mongoose;
 const courseSchema = new Schema({
     courseCode: {
         type: String,
-        required: true,
-        unique: true,
+        required: true,        
         trim: true,
-        uppercase: true,
     },
 
     name: {
@@ -20,7 +18,7 @@ const courseSchema = new Schema({
     description: {
         type: String,
         required: true,
-        maxlength: 500,
+        maxlength: 2000,
     },
 
     departmentId: {
@@ -45,7 +43,7 @@ const courseSchema = new Schema({
     institutionDomain: {
         type: String,
         required: [true, "Institution domain is required"],
-        match: [/^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/, "Invalid domain format"], // Ensure domain format is correct
+        match: [/^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/, "Invalid domain format"], 
     },
 },
     { timestamps: true }

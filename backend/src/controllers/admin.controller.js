@@ -50,10 +50,15 @@ export const registerAdmin = async (req, res) => {
       return res.status(400).json({ message: errorMessage, data: [], code: 400 });
     }
 
-    // Check if the email already exists in the database
-    const existingAdmin = await Admin.findOne({ email: email });
+    // Check if an admin with the same email or institution domain exists
+    const existingAdmin = await Admin.findOne({
+      $or: [{ email: email }, { institutionDomain: institutionDomain }]
+    });
+
     if (existingAdmin) {
-      const errorMessage = "Admin with this email already exists";
+      const errorMessage = existingAdmin.email === email
+        ? "Admin with this email already exists"
+        : "An admin is already registered with this institution domain";
       logger.warn(`${new Date().toISOString()} - Warn: ${errorMessage}`);
       return res.status(400).json({ message: errorMessage, data: [], code: 400 });
     }
@@ -101,7 +106,7 @@ export const loginAdmin = async (req, res) => {
     }
 
     // Find the admin by email
-    const admin = await Admin.findOne({ collegeEmail: email });
+    const admin = await Admin.findOne({ email });
     if (!admin) {
       const errorMessage = 'Admin not found';
       logger.error(`${new Date().toISOString()} - Error: ${errorMessage}`);
@@ -127,7 +132,7 @@ export const loginAdmin = async (req, res) => {
     logger.info(`${new Date().toISOString()} - Success: Admin logged in successfully`);
     return res.status(200).json({
       message: 'Login successful',
-      data: { token },
+      data: [{ token }, {admin}],
       code: 200
     });
 
@@ -208,7 +213,7 @@ export const updateAdmin = async (req, res) => {
     const successMessage = "Admin details updated successfully!";
     logger.info(`${new Date().toISOString()} - Success: ${successMessage}`);
     
-    return res.status(200).json({ message: successMessage, data: [], code: 200 });
+    return res.status(200).json({ message: successMessage, data: [{admin}], code: 200 });
 
   } catch (error) {
     // Log error

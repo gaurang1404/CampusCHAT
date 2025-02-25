@@ -20,9 +20,9 @@ const logger = winston.createLogger({
 // Add Faculty
 export const addFaculty = async (req, res) => {
   try {
-    const { firstName, lastName, collegeEmail, password, phone, institutionDomain, departmentId, designation, joiningDate, facultyId } = req.body;
+    const { firstName, lastName, email, password, phone, institutionDomain, departmentId, designation, joiningDate, facultyId } = req.body;
 
-    if (!collegeEmail || !firstName || !lastName || !password || !institutionDomain || !phone || !departmentId || !designation || !joiningDate || !facultyId) {
+    if (!email || !firstName || !lastName || !password || !institutionDomain || !phone || !departmentId || !designation || !joiningDate || !facultyId) {
       const errorMessage = "All fields are required";
       logger.warn(`${new Date().toISOString()} - Warn: ${errorMessage}`);
       return res.status(400).json({ 
@@ -56,7 +56,7 @@ export const addFaculty = async (req, res) => {
 
     // Email format validation
     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-    if (!emailRegex.test(collegeEmail)) {
+    if (!emailRegex.test(email)) {
       const errorMessage = "Please provide a valid email address";
       logger.warn(`${new Date().toISOString()} - Warn: ${errorMessage}`);
       return res.status(400).json({ 
@@ -77,7 +77,7 @@ export const addFaculty = async (req, res) => {
     }
 
     // Check if the email matches the institution domain
-    if (!collegeEmail.endsWith(`@${req.institutionDomain}`)) {
+    if (!email.endsWith(`@${req.institutionDomain}`)) {
       const errorMessage = "Email must belong to the institution domain";
       logger.warn(`${new Date().toISOString()} - Warn: ${errorMessage}`);
       return res.status(400).json({ 
@@ -98,9 +98,9 @@ export const addFaculty = async (req, res) => {
     }
 
     // Check if faculty with the same email exists
-    const existingFacultyWithEmail = await Faculty.findOne({ collegeEmail });
+    const existingFacultyWithEmail = await Faculty.findOne({ email });
     if (existingFacultyWithEmail) {
-      logger.warn(`Faculty with email ${collegeEmail} already exists`);
+      logger.warn(`Faculty with email ${email} already exists`);
       return res.status(400).json({ 
         message: "Faculty with this email already exists", 
         data: [], 
@@ -108,7 +108,8 @@ export const addFaculty = async (req, res) => {
       });
     }
 
-    const existingFacultyWithFacultyId = await Faculty.findOne({ facultyId });
+    const existingFacultyWithFacultyId = await Faculty.findOne({ institutionDomain: req.institutionDomain, facultyId });
+    
     if (existingFacultyWithFacultyId) {
       logger.warn(`Faculty with ID ${facultyId} already exists`);
       return res.status(400).json({ 
@@ -125,7 +126,7 @@ export const addFaculty = async (req, res) => {
     const newFaculty = new Faculty({
       firstName,
       lastName,
-      collegeEmail,
+      email,
       password: hashedPassword,
       facultyId,
       phone,
@@ -212,63 +213,82 @@ export const updateFaculty = async (req, res) => {
     const { id } = req.params;
     const updateData = req.body;
 
+    if (Object.keys(updateData).length === 0) {
+      return res.status(400).json({
+        message: "No valid fields provided for update",
+        data: [],
+        code: 400,
+      });
+    }
+
     // Ensure faculty exists and belongs to admin's institution domain
     const existingFaculty = await Faculty.findOne({ _id: id, institutionDomain: req.institutionDomain });
     if (!existingFaculty) {
-      logger.warn(`Update failed: Faculty with ID ${id} not found or does not belong to your institution.`);
-      return res.status(404).json({ 
-        message: "Faculty not found or unauthorized update attempt", 
-        data: [], 
-        code: 404 
+      logger.warn(`Update failed: Faculty with ID ${id} not found or unauthorized access.`);
+      return res.status(404).json({
+        message: "Faculty not found or unauthorized update attempt",
+        data: [],
+        code: 404,
       });
     }
 
     logger.info(`Updating faculty with ID: ${id}`);
 
-    if (updateData.collegeEmail && !updateData.collegeEmail.endsWith(`@${existingFaculty.institutionDomain}`)) {
+    if (updateData.email && !updateData.email.endsWith(`@${existingFaculty.institutionDomain}`)) {
       logger.warn(`Invalid email update attempt for faculty ID ${id}: Email must match institution domain.`);
-      return res.status(400).json({ 
-        message: "Email must belong to the institution domain", 
-        data: [], 
-        code: 400 
+      return res.status(400).json({
+        message: "Email must belong to the institution domain",
+        data: [],
+        code: 400,
       });
     }
 
     if (updateData.password) {
       if (updateData.password.length < 8) {
         logger.warn(`Password update failed for faculty ID ${id}: Password too short.`);
-        return res.status(400).json({ 
-          message: "Password should be at least 8 characters", 
-          data: [], 
-          code: 400 
+        return res.status(400).json({
+          message: "Password should be at least 8 characters",
+          data: [],
+          code: 400,
         });
       }
       updateData.password = await bcrypt.hash(updateData.password, 10);
     }
 
-    if (updateData.phone && updateData.phone.length !== 10) {
-      logger.warn(`Invalid phone number update attempt for faculty ID ${id}.`);
-      return res.status(400).json({ 
-        message: "Please enter a valid phone number", 
-        data: [], 
-        code: 400 
+    if (updateData.phone) {
+      if (!/^\d{10}$/.test(updateData.phone)) {
+        logger.warn(`Invalid phone number update attempt for faculty ID ${id}.`);
+        return res.status(400).json({
+          message: "Please enter a valid 10-digit phone number",
+          data: [],
+          code: 400,
+        });
+      }
+    }
+
+    if (updateData.role && existingFaculty.role !== "admin") {
+      logger.warn(`Unauthorized role update attempt for faculty ID ${id}.`);
+      return res.status(403).json({
+        message: "Unauthorized to modify role",
+        data: [],
+        code: 403,
       });
     }
 
     const updatedFaculty = await Faculty.findByIdAndUpdate(id, updateData, { new: true, runValidators: true });
 
     logger.info(`Faculty updated successfully: ${updatedFaculty.firstName} ${updatedFaculty.lastName}, ID: ${id}`);
-    return res.status(200).json({ 
-      message: "Faculty updated successfully", 
-      data: { faculty: updatedFaculty }, 
-      code: 200 
+    return res.status(200).json({
+      message: "Faculty updated successfully",
+      data: { faculty: updatedFaculty },
+      code: 200,
     });
   } catch (error) {
     logger.error(`Error updating faculty with ID ${req.params.id}: ${error.message}`);
-    return res.status(500).json({ 
-      message: "Internal Server Error", 
-      data: [], 
-      code: 500 
+    return res.status(500).json({
+      message: "Internal Server Error",
+      data: [],
+      code: 500,
     });
   }
 };

@@ -1,0 +1,10 @@
+{
+    "compilerOptions": {
+      "baseUrl": "./src",           // Step 2a: Set baseUrl to the src folder
+      "paths": {
+        "@/*": ["./*"]              // Step 2b: Define @ as an alias for src/
+      }
+    },
+    "include": ["src/**/*"]          // Step 2c: Include all files inside src
+  }
+  

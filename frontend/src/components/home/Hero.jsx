@@ -34,7 +34,7 @@ export default function Hero() {
               />
             </div>
             <motion.div
-              className="mt-6 flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-2"
+              className="mt-6 flex flex-col sm:flex-row sm:justify-center lg:justify-start sm:items-center gap-4 sm:gap-2"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.6 }}

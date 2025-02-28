@@ -1,8 +1,10 @@
 import { useEffect } from "react"
 import { motion, useAnimation } from "framer-motion"
 import { useInView } from "react-intersection-observer"
+import { useNavigate } from "react-router-dom";
 
 export const RegistrationComponent = () => {
+  const navigate = useNavigate();
   // Animation controls
   const headingControls = useAnimation()
   const buttonsControls = useAnimation()
@@ -141,6 +143,7 @@ export const RegistrationComponent = () => {
             whileHover={adminButtonHover}
             whileTap={{ scale: 0.98 }}
             className="text-4xl font-extrabold w-[90%] sm:m-0 sm:m-full flex justify-center items-center p-10 border-4 border-[#63144c] shadow-md cursor-pointer"
+            onClick={() => navigate("/admin-register")}
           >
             Admin
           </motion.div>

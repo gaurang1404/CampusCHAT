@@ -87,15 +87,15 @@ export const ChartDemo = () => {
         variants={chartContainerVariants}
         className="lg:max-w-[1200px] m-auto flex justify-evenly lg:justify-between items-center mt-20 flex-wrap"
       >
-        <motion.div variants={chartItemVariants} className="w-full sm:w-[45%] lg:w-[30%] p-2 m-7">
+        <motion.div variants={chartItemVariants} className="w-full sm:w-[45%] lg:w-[30%] p-2 m-7  sm:m-0">
           <AreaChartComponent />
         </motion.div>
 
-        <motion.div variants={chartItemVariants} className="w-full sm:w-[45%] lg:w-[30%] p-2 m-7">
+        <motion.div variants={chartItemVariants} className="w-full sm:w-[45%] lg:w-[30%] p-2 m-7 sm:m-0">
           <PieChartComponent />
         </motion.div>
 
-        <motion.div variants={chartItemVariants} className="w-full sm:w-[45%] lg:w-[30%] p-2 m-7">
+        <motion.div variants={chartItemVariants} className="w-full sm:w-[45%] lg:w-[30%] p-2 m-7 sm:m-0">
           <LineChartComponent />
         </motion.div>
       </motion.div>

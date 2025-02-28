@@ -30,8 +30,6 @@ import {
 } from "@/components/ui/hover-card"
 
 
-
-
 import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 
@@ -67,7 +65,7 @@ export const NavBar = () => {
 
 
     return (
-        <div className="w-full bg-[#3B1C32]">
+        <div className="w-full bg-[#63144c]">
             <div className='lg:max-w-[1400px] m-auto flex justify-between gap-2 p-2   h-[4rem] '>
                 <div className="flex justify-center items-center">
                     <NavigationMenu>
@@ -76,7 +74,7 @@ export const NavBar = () => {
                                 <NavigationMenuTrigger className=" text-[white] px-4 py-2 rounded-md transition [&>svg]:text-white">
                                     <span className="text-white text-[15px]">Getting Started</span>
                                 </NavigationMenuTrigger>
-                                <NavigationMenuContent className="bg-[#3B1C32]  text-white p-4 ">
+                                <NavigationMenuContent className="bg-[#63144c]  text-white p-4 ">
                                     <ul className="grid gap-3 p-4 w-[250px] md:w-[400px] lg:w-[500px] lg:grid-cols-[.75fr_1fr]">
                                         <li className="row-span-3">
                                             <NavigationMenuLink asChild>
@@ -106,7 +104,7 @@ export const NavBar = () => {
                                 <NavigationMenuTrigger className=" text-[white] px-4 py-2 rounded-md transition [&>svg]:text-white">
                                     <span className="text-white text-[15px] ">Components</span>
                                 </NavigationMenuTrigger>
-                                <NavigationMenuContent className="bg-[#3B1C32] text-white p-4 shadow-5xl">
+                                <NavigationMenuContent className="bg-[#63144c] text-white p-4 shadow-5xl">
                                     <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px] ">
                                         {components.map((component) => (
                                             <ListItem
@@ -121,23 +119,38 @@ export const NavBar = () => {
                                 </NavigationMenuContent>
                             </NavigationMenuItem>
 
-                            <NavigationMenuItem className=" hidden sm:flex justify-center items-center">
-                                <Link className="text-white mr-3 hover:underline" href="/">
+                            <NavigationMenuItem className="hidden sm:flex justify-center items-center">
+                                <Link
+                                    className="text-white mr-3 hover:underline"
+                                    href={user ? "/dashboard" : "#dashboard"}
+                                    onClick={(e) => {
+                                        if (!user) {
+                                            e.preventDefault(); // Prevent navigation if user is null
+                                            document.getElementById("dashboard")?.scrollIntoView({ behavior: "smooth" });
+                                        }
+                                    }}
+                                >
                                     Dashboard
                                 </Link>
                             </NavigationMenuItem>
 
-                            <NavigationMenuItem className=" hidden sm:flex justify-center items-center">
-                                <Link className="text-white mr-5 hover:underline" href="/">
-                                    Grades
-                                </Link>
-                            </NavigationMenuItem>
 
-                            <NavigationMenuItem className=" hidden sm:flex justify-center items-center">
-                                <Link className="text-white mr-5 hover:underline" href="/">
-                                    Attendance
-                                </Link>
-                            </NavigationMenuItem>
+                            {
+                                user && 
+                                <NavigationMenuItem className=" hidden sm:flex justify-center items-center">
+                                    <Link className="text-white mr-5 hover:underline" href="/">
+                                        Grades
+                                    </Link>
+                                </NavigationMenuItem>
+                            }
+                            { user &&
+                                <NavigationMenuItem className=" hidden sm:flex justify-center items-center">
+                                    <Link className="text-white mr-5 hover:underline" href="/">
+                                        Attendance
+                                    </Link>
+                                </NavigationMenuItem>
+                            }
+
 
                         </NavigationMenuList>
                     </NavigationMenu>
@@ -158,7 +171,7 @@ export const NavBar = () => {
                                 </div>
                             </div>
                         </SheetTrigger>
-                        <SheetContent className="sm:hidden bg-[#3B1C32] text-white w-64 h-full p-4">
+                        <SheetContent className="sm:hidden bg-[#63144c] text-white w-64 h-full p-4">
                             <SheetHeader>
                                 <SheetTitle className="text-lg font-bold">CampusCHAT</SheetTitle>
                             </SheetHeader>
@@ -171,19 +184,19 @@ export const NavBar = () => {
                                         </Avatar>
                                     </div>
                                     <div>
-                                        <Badge className="bg-[#3B1C32]">Student</Badge>
+                                        <Badge className="bg-[#63144c]">Student</Badge>
                                     </div>
                                     <div>
-                                        <Badge className="bg-[#3B1C32]">1BM22IS256</Badge>
+                                        <Badge className="bg-[#63144c]">1BM22IS256</Badge>
                                     </div>
                                 </div>
                                 <div className="flex flex-col gap-2">
-                                    <span className="bg-[#3B1C32] p-1 rounded-[10px] text-center">Gaurang Ramesh Shirodkar</span>
+                                    <span className="bg-[#63144c] p-1 rounded-[10px] text-center">Gaurang Ramesh Shirodkar</span>
 
-                                    <span className="bg-[#3B1C32] text-sm text-center p-1 rounded-[10px]">Information Science and...</span>
+                                    <span className="bg-[#63144c] text-sm text-center p-1 rounded-[10px]">Information Science and...</span>
                                 </div>
                             </div>
-                            <nav className="   bg-[#3B1C32] w-full m-auto rounded-b-2xl pt-6 text-center pb-6">
+                            <nav className="   bg-[#63144c] w-full m-auto rounded-b-2xl pt-6 text-center pb-6">
                                 <ul className="space-y-4">
                                     <li className="bg-[#1A1A1D] shadow-5xl w-[90%] m-auto  hover:bg-[#1e0b18] p-3 rounded-[2rem] cursor-pointer">Dashboard</li>
                                     <li className="bg-[#1A1A1D] w-[90%] m-auto  hover:bg-[#1e0b18] p-3 rounded-[2rem] cursor-pointer">Profile</li>
@@ -195,40 +208,42 @@ export const NavBar = () => {
                         </SheetContent>
                     </Sheet>
                 )}
-
-                <HoverCard>
-                    <HoverCardTrigger className="cursor-pointer hidden sm:block">
-                        <div>
-                            <Avatar className=" w-11 h-11 ">
-                                <AvatarImage src="https://github.com/shadcn.png" />
-                                <AvatarFallback>CN</AvatarFallback>
-                            </Avatar>
-                        </div>
-                    </HoverCardTrigger>
-                    <HoverCardContent className="p-4 flex justify-between gap-5 bg-[#1A1A1D]  rounded-xl text-white cursor-pointer">
-
-                        <div className="flex flex-col justify-start items-center gap-2">
-                            <div >
-                                <Avatar className="w-14 h-15 ">
+                {
+                    user && <HoverCard>
+                        <HoverCardTrigger className="cursor-pointer hidden sm:block">
+                            <div>
+                                <Avatar className=" w-11 h-11 ">
                                     <AvatarImage src="https://github.com/shadcn.png" />
-                                    <AvatarFallback>Profile</AvatarFallback>
+                                    <AvatarFallback>CN</AvatarFallback>
                                 </Avatar>
                             </div>
-                            <div>
-                                <Badge className="bg-[#3B1C32]">Student</Badge>
-                            </div>
-                            <div>
-                                <Badge className="bg-[#3B1C32]">1BM22IS256</Badge>
-                            </div>
-                        </div>
-                        <div className="flex flex-col gap-2">
-                            <span className="bg-[#3B1C32] p-1 rounded-[10px] text-center">Gaurang Ramesh Shirodkar</span>
+                        </HoverCardTrigger>
+                        <HoverCardContent className="p-4 flex justify-between gap-5 bg-[#1A1A1D]   text-white cursor-pointer">
 
-                            <span className="bg-[#3B1C32] text-sm text-center p-1 rounded-[10px]">Information Science and...</span>
-                        </div>
+                            <div className="flex flex-col justify-start items-center gap-2">
+                                <div >
+                                    <Avatar className="w-14 h-15 ">
+                                        <AvatarImage src="https://github.com/shadcn.png" />
+                                        <AvatarFallback>Profile</AvatarFallback>
+                                    </Avatar>
+                                </div>
+                                <div>
+                                    <Badge className="bg-[#63144c]">Student</Badge>
+                                </div>
+                                <div>
+                                    <Badge className="bg-[#63144c]">1BM22IS256</Badge>
+                                </div>
+                            </div>
+                            <div className="flex flex-col gap-2">
+                                <span className="bg-[#63144c] p-1 rounded-[10px] text-center">Gaurang Ramesh Shirodkar</span>
 
-                    </HoverCardContent>
-                </HoverCard>
+                                <span className="bg-[#63144c] text-sm text-center p-1 rounded-[10px]">Information Science and...</span>
+                            </div>
+
+                        </HoverCardContent>
+                    </HoverCard>
+                }
+
 
 
             </div>

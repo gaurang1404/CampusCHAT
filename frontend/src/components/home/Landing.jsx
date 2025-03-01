@@ -5,7 +5,7 @@ import Hero from './Hero'
 import { RegistrationComponent } from './RegistrationComponent'
 import { Footer } from './Footer'
 
-export const Landing = () => {
+const Landing = () => {
   return (
     <div>
         <NavBar/>
@@ -16,3 +16,5 @@ export const Landing = () => {
     </div>
   )
 }
+
+export default Landing;

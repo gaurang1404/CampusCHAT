@@ -4,6 +4,8 @@ import axios from 'axios';
 import { Check, AlertCircle, Loader2, LogIn, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Toaster, toast } from 'sonner';
+import { useDispatch } from 'react-redux';
+import { setUser } from '@/redux/authSlice';
 
 const apiUrl = import.meta.env.VITE_API_URL;
 
@@ -26,6 +28,8 @@ const AdminLoginForm = () => {
     // Form submission states
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitError, setSubmitError] = useState(null);
+
+    const dispatch = useDispatch();
 
     // Animation variants
     const formVariants = {
@@ -105,43 +109,45 @@ const AdminLoginForm = () => {
     // Handle form submission
     const handleSubmit = async (e) => {
         e.preventDefault();
-
-        // Reset submission error
         setSubmitError(null);
-
-        // Validate form
-        if (!validateForm()) {
-            return;
-        }
-
+    
+        if (!validateForm()) return;
+    
         setIsSubmitting(true);
-
-        try {
-            // Make API request
-            const response = await axios.post(`${apiUrl}/admin/loginAdmin`, {
+    
+        try {            
+            
+            const response = await axios.post(`${apiUrl}/api/admin/login`, {
                 email: formData.email,
                 password: formData.password,
-                rememberMe: rememberMe
-            });
-
+                rememberMe: rememberMe,
+            });            
+            
+    
             if (response.data.code === 200) {
-                // Show success toast
-                showToast('Login successful! Redirecting to dashboard...');
+                showToast("Login successful! Redirecting to dashboard");
+    
+                // Set user in Redux Persist (automatically stored in localStorage)
+                dispatch(setUser(response.data.data[1].admin));
+                dispatch(setUser(response.data.data[1].admin));
 
-                // Store token in localStorage or sessionStorage based on remember me
-                const storage = rememberMe ? localStorage : sessionStorage;
-                storage.setItem('adminToken', response.data.token);
-                storage.setItem('adminUser', JSON.stringify(response.data.adminUser));
-
-                // Navigate to admin dashboard
+                console.log(response.data.data[1].admin);
+                
+    
+                // Set Authorization header for future requests
+                axios.defaults.headers.common["Authorization"] = `Bearer ${response.data.data[1].token}`;
+                console.log(response.data.data[1].admin);
+                
+                // Redirect to dashboard
                 setTimeout(() => {
-                    navigate('/admin-dashboard');
+                    navigate("/admin-dashboard");
                 }, 1000);
             }
         } catch (error) {
-            const errorMsg = error.response?.data?.message || 'Login failed. Please check your credentials.';
+            
+            const errorMsg = error.response?.data?.message || error.message;
             setSubmitError(errorMsg);
-            showToast(errorMsg, 'error');
+            showToast(errorMsg, "error");
         } finally {
             setIsSubmitting(false);
         }

@@ -106,7 +106,7 @@ export const loginAdmin = async (req, res) => {
     }
 
     // Find the admin by email
-    const admin = await Admin.findOne({ email });
+    let admin = await Admin.findOne({ email });
     if (!admin) {
       const errorMessage = 'Admin not found';
       logger.error(`${new Date().toISOString()} - Error: ${errorMessage}`);
@@ -127,6 +127,8 @@ export const loginAdmin = async (req, res) => {
       process.env.JWT_SECRET_KEY, // Ensure you have a secret key stored in your environment variables
       { expiresIn: '30d' } // Token expires in 30 days
     );
+
+    admin.role = "Admin"
 
     // Send success response with token
     logger.info(`${new Date().toISOString()} - Success: Admin logged in successfully`);

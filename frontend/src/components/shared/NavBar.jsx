@@ -1,7 +1,7 @@
 import React, { forwardRef } from "react";
 import { useState } from 'react';
 import { cn } from "@/lib/utils";
-
+import { Button } from "@/components/ui/button";
 import {
     Sheet,
     SheetContent,
@@ -19,6 +19,16 @@ import {
     NavigationMenuTrigger,
 } from "@/components/ui/navigation-menu"
 
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog"
+
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 import { Badge } from "@/components/ui/badge"
@@ -29,13 +39,26 @@ import {
     HoverCardTrigger,
 } from "@/components/ui/hover-card"
 
+import { logout } from "@/redux/authSlice";
 
-import { useSelector } from "react-redux";
+
+import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 
 export const NavBar = () => {
+    const [open, setOpen] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
     const user = useSelector((state) => state.auth.user);
+
+
+    const dispatch = useDispatch();
+
+    const handleLogout = () => {
+        dispatch(logout());
+    };
+
+
+
     const components = [
         {
             title: "Alert Dialog",
@@ -119,31 +142,45 @@ export const NavBar = () => {
                                 </NavigationMenuContent>
                             </NavigationMenuItem>
 
-                            <NavigationMenuItem className="hidden sm:flex justify-center items-center">
-                                <Link
-                                    className="text-white mr-3 hover:underline"
-                                    href={user ? "/dashboard" : "#dashboard"}
-                                    onClick={(e) => {
-                                        if (!user) {
-                                            e.preventDefault(); // Prevent navigation if user is null
+                            {
+                                user &&
+                                <NavigationMenuItem className="hidden sm:flex justify-center items-center">
+                                    <Link
+                                        className="text-white mr-3 hover:underline"
+                                        to={"/admin-dashboard"}
+                                    >
+                                        Dashboard
+                                    </Link>
+                                </NavigationMenuItem>
+                            }
+
+                            {
+                                !user &&
+                                <NavigationMenuItem className="hidden sm:flex justify-center items-center">
+                                    <Link
+                                        className="text-white mr-3 hover:underline"
+                                        href={"#dashboard"}
+                                        onClick={(e) => {
                                             document.getElementById("dashboard")?.scrollIntoView({ behavior: "smooth" });
-                                        }
-                                    }}
-                                >
-                                    Dashboard
-                                </Link>
-                            </NavigationMenuItem>
+
+                                        }}
+                                    >
+                                        Dashboard
+                                    </Link>
+                                </NavigationMenuItem>
+                            }
+
 
 
                             {
-                                user && 
+                                user &&
                                 <NavigationMenuItem className=" hidden sm:flex justify-center items-center">
                                     <Link className="text-white mr-5 hover:underline" href="/">
                                         Grades
                                     </Link>
                                 </NavigationMenuItem>
                             }
-                            { user &&
+                            {user &&
                                 <NavigationMenuItem className=" hidden sm:flex justify-center items-center">
                                     <Link className="text-white mr-5 hover:underline" href="/">
                                         Attendance
@@ -184,25 +221,54 @@ export const NavBar = () => {
                                         </Avatar>
                                     </div>
                                     <div>
-                                        <Badge className="bg-[#63144c]">Student</Badge>
+                                        <Badge className="bg-[#63144c]">{user.email.includes("admin")? "Admin" : "Student"}</Badge>
                                     </div>
                                     <div>
-                                        <Badge className="bg-[#63144c]">1BM22IS256</Badge>
+                                        <Badge className="bg-[#63144c]">{user.email.includes("admin") ? user.institutionDomain : user.studentId}</Badge>
                                     </div>
                                 </div>
                                 <div className="flex flex-col gap-2">
-                                    <span className="bg-[#63144c] p-1 rounded-[10px] text-center">Gaurang Ramesh Shirodkar</span>
+                                    <span className="bg-[#63144c] p-1 rounded-[10px] text-center">{user.firstName + " " + user.lastName}</span>
 
-                                    <span className="bg-[#63144c] text-sm text-center p-1 rounded-[10px]">Information Science and...</span>
+                                    <span className="bg-[#63144c] text-sm text-center p-1 rounded-[10px]">{(user.institutionName.length > 15) ? user.institutionName.substring(0, 12) + "..." : user.institutionName}</span>
                                 </div>
                             </div>
                             <nav className="   bg-[#63144c] w-full m-auto rounded-b-2xl pt-6 text-center pb-6">
                                 <ul className="space-y-4">
-                                    <li className="bg-[#1A1A1D] shadow-5xl w-[90%] m-auto  hover:bg-[#1e0b18] p-3 rounded-[2rem] cursor-pointer">Dashboard</li>
+                                    {
+                                        user.email.includes("admin") && 
+                                        <Link to={"/admin-dashboard"}>
+                                        <li className="bg-[#1A1A1D] shadow-5xl w-[90%] m-auto  hover:bg-[#1e0b18] p-3 rounded-[2rem] cursor-pointer">Dashboard</li>                                    
+                                        </Link>
+                                    }
+                                    {
+                                        !user.email.includes("admin") && 
+                                        <li className="bg-[#1A1A1D] w-[90%] m-auto  hover:bg-[#1e0b18] p-3 rounded-[2rem] cursor-pointer">Grades</li>
+                                    }
+                                    {
+                                        !user.email.includes("admin") && 
+                                        <li className="bg-[#1A1A1D] w-[90%] m-auto  hover:bg-[#1e0b18] p-3 rounded-[2rem] cursor-pointer">Attendance</li>                                        
+                                    }
+
                                     <li className="bg-[#1A1A1D] w-[90%] m-auto  hover:bg-[#1e0b18] p-3 rounded-[2rem] cursor-pointer">Profile</li>
-                                    <li className="bg-[#1A1A1D] w-[90%] m-auto  hover:bg-[#1e0b18] p-3 rounded-[2rem] cursor-pointer">Grades</li>
-                                    <li className="bg-[#1A1A1D] w-[90%] m-auto  hover:bg-[#1e0b18] p-3 rounded-[2rem] cursor-pointer">Attendance</li>
-                                    <li className="bg-red-700 w-[90%] m-auto hover:bg-red-900 p-3 rounded-[2rem] cursor-pointer">Logout</li>
+                                    <Dialog open={open} onOpenChange={setOpen}>
+                                        <DialogTrigger asChild>
+                                            <li className="bg-red-700 w-[90%] m-auto hover:bg-red-900 p-3 rounded-[2rem] cursor-pointer">Logout</li>
+                                        </DialogTrigger>
+                                        <DialogContent className="bg-white">
+                                            <DialogHeader>
+                                                <DialogTitle>Are you sure you want to logout?</DialogTitle>
+                                                <DialogDescription>
+                                                    You will be logged out and redirected to the home page.
+                                                </DialogDescription>
+                                            </DialogHeader>
+                                            <div className="flex justify-end gap-2 mt-4">
+                                                <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
+                                                <Button className="bg-red-600 text-white hover:bg-red-800" onClick={handleLogout}>Logout</Button>
+                                            </div>
+                                        </DialogContent>
+                                    </Dialog>
+
                                 </ul>
                             </nav>
                         </SheetContent>
@@ -218,7 +284,7 @@ export const NavBar = () => {
                                 </Avatar>
                             </div>
                         </HoverCardTrigger>
-                        <HoverCardContent className="p-4 flex justify-between gap-5 bg-[#1A1A1D]   text-white cursor-pointer">
+                        <HoverCardContent className="p-4 flex-col justify-between gap-5 bg-[#1A1A1D]   text-white cursor-pointer">
 
                             <div className="flex flex-col justify-start items-center gap-2">
                                 <div >
@@ -228,17 +294,45 @@ export const NavBar = () => {
                                     </Avatar>
                                 </div>
                                 <div>
-                                    <Badge className="bg-[#63144c]">Student</Badge>
+                                    <Badge className="bg-[#63144c]">{user.role}</Badge>
                                 </div>
                                 <div>
-                                    <Badge className="bg-[#63144c]">1BM22IS256</Badge>
+                                    <Badge className="bg-[#63144c] text-wrap">{user.institutionDomain}</Badge>
                                 </div>
                             </div>
-                            <div className="flex flex-col gap-2">
-                                <span className="bg-[#63144c] p-1 rounded-[10px] text-center">Gaurang Ramesh Shirodkar</span>
+                            <div className="flex flex-col gap-2 mt-4">
+                                <span className="bg-[#63144c] p-1 rounded-[10px] text-center">{user.firstName + " " + user.lastName}</span>
 
-                                <span className="bg-[#63144c] text-sm text-center p-1 rounded-[10px]">Information Science and...</span>
+                                {
+                                    user.role != "Admin" ?
+                                        <span className="bg-[#63144c] text-sm text-center p-1 rounded-[10px]">Information Science and...</span> : null
+                                }
+
                             </div>
+                            <Dialog open={open} onOpenChange={setOpen}>
+                                <DialogTrigger asChild>
+                                    <div
+                                        className="bg-red-700 p-1 rounded-[10px] text-center hover:bg-red-900 cursor-pointer mt-2"
+                                        onClick={() => setOpen(true)}
+                                    >
+                                        Logout
+                                    </div>
+                                </DialogTrigger>
+                                <DialogContent className="bg-white">
+                                    <DialogHeader>
+                                        <DialogTitle>Are you sure you want to logout?</DialogTitle>
+                                        <DialogDescription>
+                                            You will be logged out and redirected to the home page.
+                                        </DialogDescription>
+                                    </DialogHeader>
+                                    <div className="flex justify-end gap-2 mt-4">
+                                        <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
+                                        <Button className="bg-red-600 text-white hover:bg-red-800" onClick={handleLogout}>Logout</Button>
+                                    </div>
+                                </DialogContent>
+                            </Dialog>
+
+
 
                         </HoverCardContent>
                     </HoverCard>

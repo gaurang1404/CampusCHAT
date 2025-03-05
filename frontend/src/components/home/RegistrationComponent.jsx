@@ -70,16 +70,16 @@ export const RegistrationComponent = () => {
   const studentButtonHover = {
     scale: 1.03,
     boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
-    backgroundColor: "white",
-    color: "#39aa43",
+    backgroundColor: "#63144c",
+    color: "white",
     transition: { duration: 0.3 },
   }
 
   const facultyButtonHover = {
     scale: 1.03,
     boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
-    backgroundColor: "white",
-    color: "#395baa",
+    backgroundColor: "#63144c",
+    color: "white",
     transition: { duration: 0.3 },
   }
 
@@ -123,7 +123,7 @@ export const RegistrationComponent = () => {
               variants={buttonVariants}
               whileHover={studentButtonHover}
               whileTap={{ scale: 0.98 }}
-              className="text-4xl w-[90%] sm:w-[48%] p-10 m-auto sm:m-5 flex justify-center items-center text-white bg-[#63144c] font-extrabold shadow-2xl cursor-pointer"
+              className="text-2xl lg:text-4xl w-[90%] sm:w-[48%] p-10 m-auto sm:m-5 flex justify-center items-center text-white bg-[#63144c] font-extrabold shadow-2xl cursor-pointer"
             >
               Student
             </motion.div>
@@ -132,21 +132,28 @@ export const RegistrationComponent = () => {
               variants={buttonVariants}
               whileHover={facultyButtonHover}
               whileTap={{ scale: 0.98 }}
-              className="text-4xl w-[90%] m-auto sm:m-5 sm:w-[48%] p-10 flex justify-center items-center text-white bg-[#63144c] font-extrabold shadow-2xl cursor-pointer"
+              className="text-2xl lg:text-4xl w-[90%] m-auto sm:m-5 sm:w-[48%] p-10 flex justify-center items-center text-white bg-[#63144c] font-extrabold shadow-2xl cursor-pointer"
             >
               Faculty
             </motion.div>
           </div>
 
-          <motion.div
+          <div
+            
+            
+            className="w-full pl-5 pr-5 shadow-none border-none"
+            
+          >
+            <motion.div 
             variants={buttonVariants}
             whileHover={adminButtonHover}
             whileTap={{ scale: 0.98 }}
-            className="text-4xl font-extrabold w-[90%] sm:m-0 sm:m-full flex justify-center items-center p-10 border-4 border-[#63144c] shadow-md cursor-pointer"
+            className="text-2xl lg:text-4xl font-extrabold w-[100%] sm:m-0 sm:m-full flex justify-center items-center p-10 border-4 border-[#63144c] shadow-md cursor-pointer"
             onClick={() => navigate("/admin-register")}
-          >
-            Admin
-          </motion.div>
+            >
+              Admin
+            </motion.div>
+          </div>
         </motion.div>
       </div>
     </div>

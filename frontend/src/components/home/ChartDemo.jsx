@@ -75,7 +75,7 @@ export const ChartDemo = () => {
         variants={headingVariants}
         className="lg:max-w-[1200px] m-auto flex justify-evenly lg:justify-between items-center mt-20 flex-wrap"
       >
-        <div className="pl-5 sm:pl-0">
+        <div className="pl-10 lg:p-5">
           <span className="text-5xl text-white font-extrabold">Try our interactive dashboard features!</span>
         </div>
       </motion.div>

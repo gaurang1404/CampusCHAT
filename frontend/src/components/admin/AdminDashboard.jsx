@@ -1,8 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from 'recharts';
-import { Users, GraduationCap, BookOpen, Building, Calendar, User, LayoutDashboard, Home, LogOut } from 'lucide-react';
+import { Users, GraduationCap, BookOpen, Building, Calendar, LayoutDashboard, Home, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import {
   Dialog,
@@ -16,78 +15,14 @@ import { Button } from "@/components/ui/button";
 import { logout } from "@/redux/authSlice";
 import { useDispatch } from 'react-redux';
 import { motion, AnimatePresence } from 'framer-motion';
+import axios from 'axios';
+import { CollegeOverview } from './CollegeOverview';
+import { StudentDistribution } from './StudentDistribution';
+import { FacultyDistribution } from './FacultyDistribution';
+import { EnrollmentDetails } from './EnrollmentDetails';
 
-// Sample data - in a real application, this would come from your backend
-const studentData = [
-  { department: 'Computer Science', count: 450 },
-  { department: 'Business', count: 380 },
-  { department: 'Engineering', count: 320 },
-  { department: 'Arts & Humanities', count: 280 },
-  { department: 'Health Sciences', count: 210 },
-];
-
-const facultyData = [
-  { department: 'Computer Science', count: 45 },
-  { department: 'Business', count: 38 },
-  { department: 'Engineering', count: 32 },
-  { department: 'Arts & Humanities', count: 28 },
-  { department: 'Health Sciences', count: 21 },
-];
-
-const enrollmentTrend = [
-  { semester: 'Fall 2023', students: 1500 },
-  { semester: 'Spring 2024', students: 1620 },
-  { semester: 'Summer 2024', students: 980 },
-  { semester: 'Fall 2024', students: 1640 },
-  { semester: 'Spring 2025', students: 1710 },
-];
-
-const departments = [
-  { id: 1, name: 'Computer Science', courses: 68, faculty: 45, students: 450 },
-  { id: 2, name: 'Business', courses: 72, faculty: 38, students: 380 },
-  { id: 3, name: 'Engineering', courses: 58, faculty: 32, students: 320 },
-  { id: 4, name: 'Arts & Humanities', courses: 85, faculty: 28, students: 280 },
-  { id: 5, name: 'Health Sciences', courses: 43, faculty: 21, students: 210 },
-];
-
-const semesters = [
-  { id: 1, name: 'Spring 2025', startDate: 'Jan 15, 2025', endDate: 'May 10, 2025', status: 'Current', courses: 320, students: 1710 },
-  { id: 2, name: 'Fall 2024', startDate: 'Aug 20, 2024', endDate: 'Dec 15, 2024', status: 'Completed', courses: 315, students: 1640 },
-  { id: 3, name: 'Summer 2024', startDate: 'May 25, 2024', endDate: 'Aug 5, 2024', status: 'Completed', courses: 180, students: 980 },
-  { id: 4, name: 'Spring 2024', startDate: 'Jan 15, 2024', endDate: 'May 10, 2024', status: 'Completed', courses: 310, students: 1620 },
-];
-
-const sections = [
-  { id: 1, courseCode: 'CS101', courseName: 'Introduction to Programming', instructor: 'Dr. Alan Turing', students: 45, room: 'CS-201' },
-  { id: 2, courseCode: 'BUS220', courseName: 'Marketing Fundamentals', instructor: 'Prof. Emily Richardson', students: 38, room: 'BUS-110' },
-  { id: 3, courseCode: 'ENG150', courseName: 'Materials Science', instructor: 'Dr. Robert Chen', students: 32, room: 'ENG-305' },
-  { id: 4, courseCode: 'HUM101', courseName: 'Introduction to Philosophy', instructor: 'Dr. Sarah Williams', students: 40, room: 'HUM-201' },
-  { id: 5, courseCode: 'HS205', courseName: 'Anatomy & Physiology', instructor: 'Dr. Michael Brown', students: 35, room: 'HS-105' },
-];
-
-const faculty = [
-  { id: 1, name: 'Dr. Alan Turing', department: 'Computer Science', position: 'Professor', courses: 3, students: 120 },
-  { id: 2, name: 'Prof. Emily Richardson', department: 'Business', position: 'Associate Professor', courses: 4, students: 145 },
-  { id: 3, name: 'Dr. Robert Chen', department: 'Engineering', position: 'Professor', courses: 2, students: 85 },
-  { id: 4, name: 'Dr. Sarah Williams', department: 'Arts & Humanities', position: 'Assistant Professor', courses: 5, students: 175 },
-  { id: 5, name: 'Dr. Michael Brown', department: 'Health Sciences', position: 'Professor', courses: 3, students: 105 },
-];
-
-const students = [
-  { id: 1, name: 'John Smith', major: 'Computer Science', gpa: 3.8, credits: 78, advisorId: 1 },
-  { id: 2, name: 'Maria Garcia', major: 'Business', gpa: 3.6, credits: 65, advisorId: 2 },
-  { id: 3, name: 'David Wong', major: 'Engineering', gpa: 3.9, credits: 85, advisorId: 3 },
-  { id: 4, name: 'Aisha Johnson', major: 'Philosophy', gpa: 3.7, credits: 72, advisorId: 4 },
-  { id: 5, name: 'Raj Patel', major: 'Health Sciences', gpa: 4.0, credits: 90, advisorId: 5 },
-];
-
-const courses = [
-  { id: 1, code: 'CS101', name: 'Introduction to Programming', department: 'Computer Science', credits: 3, students: 45 },
-  { id: 2, code: 'BUS220', name: 'Marketing Fundamentals', department: 'Business', credits: 3, students: 38 },
-  { id: 3, code: 'ENG150', name: 'Materials Science', department: 'Engineering', credits: 4, students: 32 },
-  { id: 4, code: 'HUM101', name: 'Introduction to Philosophy', department: 'Arts & Humanities', credits: 3, students: 40 },
-  { id: 5, code: 'HS205', name: 'Anatomy & Physiology', department: 'Health Sciences', credits: 4, students: 35 },
-];
+// Import API URL from environment variables
+const apiUrl = import.meta.env.VITE_API_URL;
 
 // Colors for charts
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
@@ -137,6 +72,118 @@ const tableRowVariants = {
 
 // Component for the dashboard tab
 const DashboardTab = () => {
+  const [dashboardData, setDashboardData] = useState({
+    students: [],
+    faculty: [],
+    courses: [],
+    departments: [],
+    studentDistribution: [],
+    facultyDistribution: []
+  });
+  
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        setIsLoading(true);
+        
+        // Get token from localStorage or sessionStorage
+        const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+
+        // Set up Axios headers with the token
+        const config = {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        };
+        
+        // Fetch data from multiple endpoints with Authorization
+        let [studentsRes, facultyRes, coursesRes, departmentsRes] = await Promise.all([
+          axios.get(`${apiUrl}/api/student/`, config),
+          axios.get(`${apiUrl}/api/faculty/`, config),
+          axios.get(`${apiUrl}/api/course/`, config),
+          axios.get(`${apiUrl}/api/department/`, config)
+        ]);
+        
+        studentsRes = studentsRes.data.data.students
+        facultyRes = facultyRes.data.data.faculties;
+        coursesRes = coursesRes.data.data
+        departmentsRes = departmentsRes.data.data.departments
+                
+        // Process the data for student distribution by department
+        const studentsByDepartment = {};
+        studentsRes.forEach(student => {
+          if (student.departmentId.name) {
+            studentsByDepartment[student.departmentId.name] = (studentsByDepartment[student.departmentId.name] || 0) + 1;
+          }
+        });
+        
+        const studentDistribution = Object.keys(studentsByDepartment).map(department => ({
+          department,
+          count: studentsByDepartment[department]
+        }));
+        
+        // Process the data for faculty distribution by department
+        const facultyByDepartment = {};
+        facultyRes.forEach(faculty => {
+          if (faculty.departmentId.name) {
+            facultyByDepartment[faculty.departmentId.name] = (facultyByDepartment[faculty.departmentId.name] || 0) + 1;
+          }
+        });
+        
+        const facultyDistribution = Object.keys(facultyByDepartment).map(department => ({
+          department,
+          count: facultyByDepartment[department]
+        }));
+        
+        // Update state with fetched data
+        setDashboardData({
+          students: studentsRes,
+          faculty: facultyRes,
+          courses: coursesRes,
+          departments: departmentsRes,
+          studentDistribution,
+          facultyDistribution
+        });
+        
+        setIsLoading(false);
+      } catch (err) {
+        console.error("Error fetching dashboard data:", err);
+        setError("Failed to load dashboard data. Please try again later.");
+        setIsLoading(false);
+      }
+    };
+    
+    fetchDashboardData();
+  }, []);
+
+  const enrollmentTrend = [
+    // { semester: 'Fall 2023', students: 1500 },
+    // { semester: 'Spring 2024', students: 1620 },
+    // { semester: 'Summer 2024', students: 980 },
+    // { semester: 'Fall 2024', students: 1640 },
+    // { semester: 'Spring 2025', students: 1710 },
+  ];
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-800"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-red-100 p-4 rounded-lg text-red-800">
+        <h3 className="font-bold">Error</h3>
+        <p>{error}</p>
+      </div>
+    );
+  }
+
   return (
     <motion.div 
       className="grid grid-cols-1 md:grid-cols-2 gap-4"
@@ -144,161 +191,56 @@ const DashboardTab = () => {
       initial="hidden"
       animate="visible"
     >
-      <motion.div className="col-span-1 md:col-span-2" variants={cardVariants}>
-        <Card className="border-none shadow-xl">
-          <CardHeader>
-            <CardTitle>College Overview</CardTitle>
-            <CardDescription>Key metrics for the current semester</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <motion.div 
-              className="grid grid-cols-2 md:grid-cols-4 gap-4"
-              variants={containerVariants}
-            >
-              <motion.div 
-                className="bg-blue-100 p-4 rounded-lg flex flex-col items-center"
-                variants={itemVariants}
-                whileHover={{ scale: 1.05, transition: { duration: 0.2 } }}
-              >
-                <Users className="h-8 w-8 text-blue-500 mb-2" />
-                <h3 className="text-xl font-bold">1,710</h3>
-                <p className="text-sm text-gray-600">Total Students</p>
-              </motion.div>
-              <motion.div 
-                className="bg-green-100 p-4 rounded-lg flex flex-col items-center"
-                variants={itemVariants}
-                whileHover={{ scale: 1.05, transition: { duration: 0.2 } }}
-              >
-                <GraduationCap className="h-8 w-8 text-green-500 mb-2" />
-                <h3 className="text-xl font-bold">164</h3>
-                <p className="text-sm text-gray-600">Faculty Members</p>
-              </motion.div>
-              <motion.div 
-                className="bg-yellow-100 p-4 rounded-lg flex flex-col items-center"
-                variants={itemVariants}
-                whileHover={{ scale: 1.05, transition: { duration: 0.2 } }}
-              >
-                <BookOpen className="h-8 w-8 text-yellow-500 mb-2" />
-                <h3 className="text-xl font-bold">320</h3>
-                <p className="text-sm text-gray-600">Active Courses</p>
-              </motion.div>
-              <motion.div 
-                className="bg-purple-100 p-4 rounded-lg flex flex-col items-center"
-                variants={itemVariants}
-                whileHover={{ scale: 1.05, transition: { duration: 0.2 } }}
-              >
-                <Building className="h-8 w-8 text-purple-500 mb-2" />
-                <h3 className="text-xl font-bold">5</h3>
-                <p className="text-sm text-gray-600">Departments</p>
-              </motion.div>
-            </motion.div>
-          </CardContent>
-        </Card>
-      </motion.div>
+      <CollegeOverview 
+        cardVariants={cardVariants} 
+        containerVariants={containerVariants}
+        itemVariants={itemVariants}
+        students={dashboardData.students}
+        faculty={dashboardData.faculty}
+        courses={dashboardData.courses}
+        departments={dashboardData.departments}        
+      />      
 
-      <motion.div variants={cardVariants}>
-        <Card className="border-none shadow-xl">
-          <CardHeader>
-            <CardTitle>Student Distribution</CardTitle>
-            <CardDescription>By department</CardDescription>
-          </CardHeader>
-          <CardContent className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={studentData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ department, percent }) => `${department} ${(percent * 100).toFixed(0)}%`}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="count"
-                  animationBegin={300}
-                  animationDuration={1500}
-                >
-                  {studentData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      </motion.div>
+      <StudentDistribution
+        cardVariants={cardVariants} 
+        containerVariants={containerVariants}
+        itemVariants={itemVariants}
+        studentDistribution={dashboardData.studentDistribution}
+      />
 
-      <motion.div variants={cardVariants}>
-        <Card className="border-none shadow-xl">
-          <CardHeader>
-            <CardTitle>Faculty Distribution</CardTitle>
-            <CardDescription>By department</CardDescription>
-          </CardHeader>
-          <CardContent className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={facultyData}
-                margin={{
-                  top: 5,
-                  right: 30,
-                  left: 20,
-                  bottom: 5,
-                }}
-              >
-                <XAxis dataKey="department" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="count" fill="#8884d8" animationBegin={300} animationDuration={1500}>
-                  {facultyData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      </motion.div>
+      <FacultyDistribution
+        cardVariants={cardVariants} 
+        containerVariants={containerVariants}
+        itemVariants={itemVariants}
+        faculty={dashboardData.facultyDistribution}
+      />      
 
-      <motion.div className="col-span-1 md:col-span-2" variants={cardVariants}>
-        <Card className="border-none shadow-xl">
-          <CardHeader>
-            <CardTitle>Enrollment Trends</CardTitle>
-            <CardDescription>Student enrollment over recent semesters</CardDescription>
-          </CardHeader>
-          <CardContent className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart
-                data={enrollmentTrend}
-                margin={{
-                  top: 5,
-                  right: 30,
-                  left: 20,
-                  bottom: 5,
-                }}
-              >
-                <XAxis dataKey="semester" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Line 
-                  type="monotone" 
-                  dataKey="students" 
-                  stroke="#8884d8" 
-                  activeDot={{ r: 8 }} 
-                  animationBegin={300}
-                  animationDuration={1500}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      </motion.div>
+      <EnrollmentDetails
+        cardVariants={cardVariants} 
+        enrollmentTrend={enrollmentTrend}
+      />      
     </motion.div>
   );
 };
 
-// Component to display a list with title and items
-const DataList = ({ title, description, data, columns }) => {
+const DataList = ({ title, description, data, columns, isLoading, error }) => {
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-red-100 p-4 rounded-lg text-red-800">
+        <h3 className="font-bold">Error</h3>
+        <p>{error}</p>
+      </div>
+    );
+  }
+
   return (
     <motion.div
       variants={containerVariants}
@@ -321,21 +263,29 @@ const DataList = ({ title, description, data, columns }) => {
                 </tr>
               </thead>
               <tbody>
-                {data.map((item, i) => (
-                  <motion.tr 
-                    key={item.id} 
-                    className="border-b hover:bg-gray-50"
-                    custom={i}
-                    variants={tableRowVariants}
-                    initial="hidden"
-                    animate="visible"
-                    whileHover={{ backgroundColor: "#f8f9fa", transition: { duration: 0.1 } }}
-                  >
-                    {columns.map((column, index) => (
-                      <td key={index} className="px-4 py-2">{item[column.key]}</td>
-                    ))}
-                  </motion.tr>
-                ))}
+                {data.length > 0 ? (
+                  data.map((item, i) => (
+                    <motion.tr 
+                      key={item.id || i} 
+                      className="border-b hover:bg-gray-50"
+                      custom={i}
+                      variants={tableRowVariants}
+                      initial="hidden"
+                      animate="visible"
+                      whileHover={{ backgroundColor: "#f8f9fa", transition: { duration: 0.1 } }}
+                    >
+                      {columns.map((column, index) => (
+                        <td key={index} className="px-4 py-2">{item[column.key]}</td>
+                      ))}
+                    </motion.tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={columns.length} className="px-4 py-8 text-center text-gray-500">
+                      No data available
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
@@ -351,11 +301,161 @@ const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  
+  // State for API data
+  const [departments, setDepartments] = useState([]);
+  const [semesters, setSemesters] = useState([]);
+  const [sections, setSections] = useState([]);
+  const [faculty, setFaculty] = useState([]);
+  const [students, setStudents] = useState([]);
+  const [courses, setCourses] = useState([]);
+  
+  // Loading and error states
+  const [loadingStates, setLoadingStates] = useState({
+    departments: true,
+    semesters: true,
+    sections: true,
+    faculty: true,
+    students: true,
+    courses: true
+  });
+  
+  const [errorStates, setErrorStates] = useState({
+    departments: null,
+    semesters: null,
+    sections: null,
+    faculty: null,
+    students: null,
+    courses: null
+  });
+
+  // Fetch data when tab changes
+  useEffect(() => {
+    const fetchTabData = async () => {
+      // Only fetch data for the active tab to optimize performance
+      switch(activeTab) {
+        case "departments":
+          if (departments.length === 0) {
+            fetchDepartments();
+          }
+          break;
+        case "semesters":
+          if (semesters.length === 0) {
+            fetchSemesters();
+          }
+          break;
+        case "sections":
+          if (sections.length === 0) {
+            fetchSections();
+          }
+          break;
+        case "faculty":
+          if (faculty.length === 0) {
+            fetchFaculty();
+          }
+          break;
+        case "students":
+          if (students.length === 0) {
+            fetchStudents();
+          }
+          break;
+        case "courses":
+          if (courses.length === 0) {
+            fetchCourses();
+          }
+          break;
+        default:
+          break;
+      }
+    };
+    
+    fetchTabData();
+  }, [activeTab]);
+
+  // Fetch functions for each data type
+  const fetchDepartments = async () => {
+    try {
+      setLoadingStates(prev => ({ ...prev, departments: true }));
+      const response = await axios.get(`${apiUrl}/api/department/`);
+      setDepartments(response.data);
+      setLoadingStates(prev => ({ ...prev, departments: false }));
+    } catch (err) {
+      console.error("Error fetching departments:", err);
+      setErrorStates(prev => ({ ...prev, departments: "Failed to load departments" }));
+      setLoadingStates(prev => ({ ...prev, departments: false }));
+    }
+  };
+  
+  const fetchSemesters = async () => {
+    try {
+      setLoadingStates(prev => ({ ...prev, semesters: true }));
+      // This endpoint is assumed - replace with your actual semester endpoint
+      const response = await axios.get(`${apiUrl}/api/semester/`);
+      setSemesters(response.data);
+      setLoadingStates(prev => ({ ...prev, semesters: false }));
+    } catch (err) {
+      console.error("Error fetching semesters:", err);
+      setErrorStates(prev => ({ ...prev, semesters: "Failed to load semesters" }));
+      setLoadingStates(prev => ({ ...prev, semesters: false }));
+    }
+  };
+  
+  const fetchSections = async () => {
+    try {
+      setLoadingStates(prev => ({ ...prev, sections: true }));
+      // This endpoint is assumed - replace with your actual section endpoint
+      const response = await axios.get(`${apiUrl}/api/section/`);
+      setSections(response.data);
+      setLoadingStates(prev => ({ ...prev, sections: false }));
+    } catch (err) {
+      console.error("Error fetching sections:", err);
+      setErrorStates(prev => ({ ...prev, sections: "Failed to load sections" }));
+      setLoadingStates(prev => ({ ...prev, sections: false }));
+    }
+  };
+  
+  const fetchFaculty = async () => {
+    try {
+      setLoadingStates(prev => ({ ...prev, faculty: true }));
+      const response = await axios.get(`${apiUrl}/api/faculty/`);
+      setFaculty(response.data);
+      setLoadingStates(prev => ({ ...prev, faculty: false }));
+    } catch (err) {
+      console.error("Error fetching faculty:", err);
+      setErrorStates(prev => ({ ...prev, faculty: "Failed to load faculty" }));
+      setLoadingStates(prev => ({ ...prev, faculty: false }));
+    }
+  };
+  
+  const fetchStudents = async () => {
+    try {
+      setLoadingStates(prev => ({ ...prev, students: true }));
+      const response = await axios.get(`${apiUrl}/api/student/`);
+      setStudents(response.data);
+      setLoadingStates(prev => ({ ...prev, students: false }));
+    } catch (err) {
+      console.error("Error fetching students:", err);
+      setErrorStates(prev => ({ ...prev, students: "Failed to load students" }));
+      setLoadingStates(prev => ({ ...prev, students: false }));
+    }
+  };
+  
+  const fetchCourses = async () => {
+    try {
+      setLoadingStates(prev => ({ ...prev, courses: true }));
+      const response = await axios.get(`${apiUrl}/api/course/`);
+      setCourses(response.data);
+      setLoadingStates(prev => ({ ...prev, courses: false }));
+    } catch (err) {
+      console.error("Error fetching courses:", err);
+      setErrorStates(prev => ({ ...prev, courses: "Failed to load courses" }));
+      setLoadingStates(prev => ({ ...prev, courses: false }));
+    }
+  };
 
   // Handle navigation functions
   const handleHomeClick = () => {
-    // In a real application, this would navigate to the home page
-    navigate("/")
+    navigate("/");
   };
 
   const handleLogout = () => {
@@ -387,6 +487,54 @@ const AdminDashboard = () => {
       transition: { duration: 0.1 }
     }
   };
+
+  // Define column mappings for each data type
+  const departmentColumns = [
+    { key: 'name', label: 'Department' },
+    { key: 'courses', label: 'Courses' },
+    { key: 'faculty', label: 'Faculty' },
+    { key: 'students', label: 'Students' }
+  ];
+  
+  const semesterColumns = [
+    { key: 'name', label: 'Term' },
+    { key: 'startDate', label: 'Start Date' },
+    { key: 'endDate', label: 'End Date' },
+    { key: 'status', label: 'Status' },
+    { key: 'courses', label: 'Courses' },
+    { key: 'students', label: 'Students' }
+  ];
+  
+  const sectionColumns = [
+    { key: 'courseCode', label: 'Code' },
+    { key: 'courseName', label: 'Course Name' },
+    { key: 'instructor', label: 'Instructor' },
+    { key: 'students', label: 'Students' },
+    { key: 'room', label: 'Room' }
+  ];
+  
+  const facultyColumns = [
+    { key: 'name', label: 'Name' },
+    { key: 'department', label: 'Department' },
+    { key: 'position', label: 'Position' },
+    { key: 'courses', label: 'Courses' },
+    { key: 'students', label: 'Students' }
+  ];
+  
+  const studentColumns = [
+    { key: 'name', label: 'Name' },
+    { key: 'major', label: 'Major' },
+    { key: 'gpa', label: 'GPA' },
+    { key: 'credits', label: 'Credits' }
+  ];
+  
+  const courseColumns = [
+    { key: 'code', label: 'Code' },
+    { key: 'name', label: 'Name' },
+    { key: 'department', label: 'Department' },
+    { key: 'credits', label: 'Credits' },
+    { key: 'students', label: 'Students' }
+  ];
 
   return (
     <div>
@@ -504,12 +652,9 @@ const AdminDashboard = () => {
                   title="Departments"
                   description="All academic departments"
                   data={departments}
-                  columns={[
-                    { key: 'name', label: 'Department' },
-                    { key: 'courses', label: 'Courses' },
-                    { key: 'faculty', label: 'Faculty' },
-                    { key: 'students', label: 'Students' }
-                  ]}
+                  columns={departmentColumns}
+                  isLoading={loadingStates.departments}
+                  error={errorStates.departments}
                 />
               </TabsContent>
 
@@ -518,14 +663,9 @@ const AdminDashboard = () => {
                   title="Semesters"
                   description="Academic terms"
                   data={semesters}
-                  columns={[
-                    { key: 'name', label: 'Term' },
-                    { key: 'startDate', label: 'Start Date' },
-                    { key: 'endDate', label: 'End Date' },
-                    { key: 'status', label: 'Status' },
-                    { key: 'courses', label: 'Courses' },
-                    { key: 'students', label: 'Students' }
-                  ]}
+                  columns={semesterColumns}
+                  isLoading={loadingStates.semesters}
+                  error={errorStates.semesters}
                 />
               </TabsContent>
 
@@ -534,13 +674,9 @@ const AdminDashboard = () => {
                   title="Class Sections"
                   description="Current course sections"
                   data={sections}
-                  columns={[
-                    { key: 'courseCode', label: 'Code' },
-                    { key: 'courseName', label: 'Course Name' },
-                    { key: 'instructor', label: 'Instructor' },
-                    { key: 'students', label: 'Students' },
-                    { key: 'room', label: 'Room' }
-                  ]}
+                  columns={sectionColumns}
+                  isLoading={loadingStates.sections}
+                  error={errorStates.sections}
                 />
               </TabsContent>
 
@@ -549,13 +685,9 @@ const AdminDashboard = () => {
                   title="Faculty"
                   description="Academic staff"
                   data={faculty}
-                  columns={[
-                    { key: 'name', label: 'Name' },
-                    { key: 'department', label: 'Department' },
-                    { key: 'position', label: 'Position' },
-                    { key: 'courses', label: 'Courses' },
-                    { key: 'students', label: 'Students' }
-                  ]}
+                  columns={facultyColumns}
+                  isLoading={loadingStates.faculty}
+                  error={errorStates.faculty}
                 />
               </TabsContent>
 

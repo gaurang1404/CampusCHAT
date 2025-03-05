@@ -173,14 +173,14 @@ export const NavBar = () => {
 
 
                             {
-                                user &&
+                                user && !user.email.includes("admin") &&
                                 <NavigationMenuItem className=" hidden sm:flex justify-center items-center">
                                     <Link className="text-white mr-5 hover:underline" href="/">
                                         Grades
                                     </Link>
                                 </NavigationMenuItem>
                             }
-                            {user &&
+                            { user && !user.email.includes("admin") &&
                                 <NavigationMenuItem className=" hidden sm:flex justify-center items-center">
                                     <Link className="text-white mr-5 hover:underline" href="/">
                                         Attendance
@@ -221,7 +221,7 @@ export const NavBar = () => {
                                         </Avatar>
                                     </div>
                                     <div>
-                                        <Badge className="bg-[#63144c]">{user.email.includes("admin")? "Admin" : "Student"}</Badge>
+                                        <Badge className="bg-[#63144c]">{user.email.includes("admin") ? "Admin" : "Student"}</Badge>
                                     </div>
                                     <div>
                                         <Badge className="bg-[#63144c]">{user.email.includes("admin") ? user.institutionDomain : user.studentId}</Badge>
@@ -236,18 +236,18 @@ export const NavBar = () => {
                             <nav className="   bg-[#63144c] w-full m-auto rounded-b-2xl pt-6 text-center pb-6">
                                 <ul className="space-y-4">
                                     {
-                                        user.email.includes("admin") && 
+                                        user.email.includes("admin") &&
                                         <Link to={"/admin-dashboard"}>
-                                        <li className="bg-[#1A1A1D] shadow-5xl w-[90%] m-auto  hover:bg-[#1e0b18] p-3 rounded-[2rem] cursor-pointer">Dashboard</li>                                    
+                                            <li className="bg-[#1A1A1D] shadow-5xl w-[90%] m-auto  hover:bg-[#1e0b18] p-3 rounded-[2rem] cursor-pointer">Dashboard</li>
                                         </Link>
                                     }
                                     {
-                                        !user.email.includes("admin") && 
+                                        !user.email.includes("admin") &&
                                         <li className="bg-[#1A1A1D] w-[90%] m-auto  hover:bg-[#1e0b18] p-3 rounded-[2rem] cursor-pointer">Grades</li>
                                     }
                                     {
-                                        !user.email.includes("admin") && 
-                                        <li className="bg-[#1A1A1D] w-[90%] m-auto  hover:bg-[#1e0b18] p-3 rounded-[2rem] cursor-pointer">Attendance</li>                                        
+                                        !user.email.includes("admin") &&
+                                        <li className="bg-[#1A1A1D] w-[90%] m-auto  hover:bg-[#1e0b18] p-3 rounded-[2rem] cursor-pointer">Attendance</li>
                                     }
 
                                     <li className="bg-[#1A1A1D] w-[90%] m-auto  hover:bg-[#1e0b18] p-3 rounded-[2rem] cursor-pointer">Profile</li>
@@ -280,7 +280,7 @@ export const NavBar = () => {
                             <div>
                                 <Avatar className=" w-11 h-11 ">
                                     <AvatarImage src="https://github.com/shadcn.png" />
-                                    <AvatarFallback>CN</AvatarFallback>
+                                    <AvatarFallback>Profile</AvatarFallback>
                                 </Avatar>
                             </div>
                         </HoverCardTrigger>
@@ -294,7 +294,9 @@ export const NavBar = () => {
                                     </Avatar>
                                 </div>
                                 <div>
-                                    <Badge className="bg-[#63144c]">{user.role}</Badge>
+                                    {
+                                        (user.email.includes("admin") && <Badge className="bg-[#63144c]">Admin</Badge>) 
+                                    } 
                                 </div>
                                 <div>
                                     <Badge className="bg-[#63144c] text-wrap">{user.institutionDomain}</Badge>

@@ -38,6 +38,7 @@ app.use(cors())
 app.get("/", (req, res) => {
     res.send("Hello");
 })
+
 app.use("/api/openai", openaiRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/department", departmentRoutes);

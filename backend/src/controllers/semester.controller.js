@@ -30,18 +30,8 @@ export const addSemester = async (req, res) => {
             });
         }
 
-        // Check if a semester with the same name or code already exists
-        const existingSemesterByName = await Semester.findOne({ name });
-        const existingSemesterByCode = await Semester.findOne({ semesterCode });
-
-        if (existingSemesterByName) {
-            logger.warn(`Semester already exists with name: ${name}`);
-            return res.status(400).json({
-                message: "Semester with the same name already exists",
-                data: [],
-                code: 400
-            });
-        }
+        // Check if a semester with the same name or code already exists        
+        const existingSemesterByCode = await Semester.findOne({ semesterCode });        
 
         if (existingSemesterByCode) {
             logger.warn(`Semester already exists with code: ${semesterCode}`);
@@ -57,7 +47,8 @@ export const addSemester = async (req, res) => {
             semesterCode,
             departmentId,
             startDate,
-            endDate
+            endDate,
+            institutionDomain: req.institutionDomain,
         });
 
         await newSemester.save();
@@ -132,19 +123,45 @@ export const getSemesterById = async (req, res) => {
 // Update a semester
 export const updateSemester = async (req, res) => {
     try {
-        const updatedSemester = await Semester.findByIdAndUpdate(req.params.id, req.body, { new: true });
-        if (!updatedSemester) {
+        const { semesterCode } = req.body;
+        const { id } = req.params;
+
+        // Check if semester exists
+        const existingSemester = await Semester.findById(id);
+        if (!existingSemester) {
             return res.status(404).json({
                 message: "Semester not found",
                 data: [],
                 code: 404
             });
         }
+
+        // Check if another semester already exists with the same semesterCode
+        if (semesterCode) {
+            const duplicateSemester = await Semester.findOne({ 
+                semesterCode, 
+                _id: { $ne: id }  // Exclude the current semester from the check
+            });
+
+            if (duplicateSemester) {
+                logger.warn(`Attempt to update semester with an existing code: ${semesterCode}`);
+                return res.status(400).json({
+                    message: "Semester with the same code already exists",
+                    data: [],
+                    code: 400
+                });
+            }
+        }
+
+        // Proceed with the update
+        const updatedSemester = await Semester.findByIdAndUpdate(id, req.body, { new: true });
+
         return res.status(200).json({
             message: "Semester updated successfully",
             data: { semester: updatedSemester },
             code: 200
         });
+
     } catch (error) {
         logger.error(`Error updating semester: ${error.message}`);
         return res.status(500).json({
@@ -154,6 +171,7 @@ export const updateSemester = async (req, res) => {
         });
     }
 };
+
 
 // Delete a semester and its associated sections
 export const deleteSemester = async (req, res) => {
@@ -186,6 +204,36 @@ export const deleteSemester = async (req, res) => {
         });
     } catch (error) {
         logger.error(`Error deleting semester: ${error.message}`);
+        return res.status(500).json({
+            message: "Internal Server Error",
+            data: [],
+            code: 500
+        });
+    }
+};
+
+export const getSemestersByDepartment = async (req, res) => {  
+    try {        
+        const { id: departmentId } = req.params;
+        
+        const semesters = await Semester.find({ departmentId }).populate("departmentId");
+
+        if (!semesters.length) {
+            return res.status(200).json({
+                message: "No semesters found for this department",
+                data: {semesters: []},
+                code: 200
+            });
+        }
+
+        return res.status(200).json({
+            message: "Semesters fetched successfully",
+            data: { semesters },
+            code: 200
+        });
+    } catch (error) {
+        console.log(error);        
+        logger.error(`Error fetching semesters by department: ${error.message}`);
         return res.status(500).json({
             message: "Internal Server Error",
             data: [],

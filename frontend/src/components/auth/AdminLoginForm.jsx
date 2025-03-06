@@ -147,6 +147,7 @@ const AdminLoginForm = () => {
                 }, 1000);
             }
         } catch (error) {
+            console.log(error);
             
             const errorMsg = error.response?.data?.message || error.message;
             setSubmitError(errorMsg);

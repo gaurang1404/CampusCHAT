@@ -68,8 +68,6 @@ export const addDepartment = async (req, res) => {
 
 export const getDepartments = async (req, res) => {
   try {
-    console.log(req.institutionDomain);
-
     const departments = await Department.find({ institutionDomain: req.institutionDomain })
       .populate("headOfDepartment")
       .populate("semesters");

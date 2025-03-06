@@ -4,7 +4,8 @@ import {
   getSemesters, 
   getSemesterById, 
   updateSemester, 
-  deleteSemester 
+  deleteSemester,
+  getSemestersByDepartment 
 } from '../controllers/semester.controller.js';
 import { authenticateJWT } from '../middlewares/auth.middleware.js';
 import { rateLimiter } from '../middlewares/rate.middleware.js';
@@ -16,6 +17,9 @@ router.post("/add", authenticateJWT, rateLimiter, addSemester);
 
 // Route to get all semesters (protected)
 router.get("/", authenticateJWT, getSemesters);
+
+// Route to get semesters by department (protected)
+router.get("/departmentId/:id", authenticateJWT, getSemestersByDepartment);
 
 // Route to get a single semester by ID (protected)
 router.get("/:id", authenticateJWT, getSemesterById);

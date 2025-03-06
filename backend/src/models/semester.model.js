@@ -4,8 +4,7 @@ const semesterSchema = new mongoose.Schema({
     name: {
         type: String,
         required: [true, "Semester name is required"],
-        trim: true,
-        enum: ["Semester 1", "Semester 2", "Semester 3", "Semester 4", "Semester 5", "Semester 6", "Semester 7", "Semester 8"]
+        trim: true,        
     },
 
     institutionDomain: {
@@ -17,7 +16,6 @@ const semesterSchema = new mongoose.Schema({
     semesterCode: {
         type: String,
         required: [true, "Semester code is required"],
-        unique: true,
         trim: true
     },
 

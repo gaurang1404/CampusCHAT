@@ -96,12 +96,13 @@ const DashboardTab = () => {
         facultyRes = facultyRes.data.data.faculties;
         coursesRes = coursesRes.data.data
         departmentsRes = departmentsRes.data.data.departments
+        
                 
         // Process the data for student distribution by department
         const studentsByDepartment = {};
         studentsRes.forEach(student => {
-          if (student.departmentId.name) {
-            studentsByDepartment[student.departmentId.name] = (studentsByDepartment[student.departmentId.name] || 0) + 1;
+          if (student.departmentId.departmentCode) {
+            studentsByDepartment[student.departmentId.departmentCode] = (studentsByDepartment[student.departmentId.departmentCode] || 0) + 1;
           }
         });
         
@@ -132,6 +133,9 @@ const DashboardTab = () => {
           studentDistribution,
           facultyDistribution
         });
+
+        console.log(studentDistribution);
+        
         
         setIsLoading(false);
       } catch (err) {

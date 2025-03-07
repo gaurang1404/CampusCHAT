@@ -306,8 +306,8 @@ export const NavBar = () => {
                                 <span className="bg-[#63144c] p-1 rounded-[10px] text-center">{user.firstName + " " + user.lastName}</span>
 
                                 {
-                                    user.role != "Admin" ?
-                                        <span className="bg-[#63144c] text-sm text-center p-1 rounded-[10px]">Information Science and...</span> : null
+                                    !user.email.includes("admin") ?
+                                        <span className="bg-[#63144c] text-sm text-center p-1 rounded-[10px]">{user.departmentId.name}</span> : null
                                 }
 
                             </div>

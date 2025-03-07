@@ -338,9 +338,9 @@ const SemestersTab = () => {
                         <div className="flex gap-2">
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                    <Button variant="outline" className="bg-white text-[#63144c] hover:bg-gray-100">
+                                    <Button variant="outline" className="bg-white text-[#63144c] hover:bg-gray-100 hover:text-black">
                                         <Filter size={16} className="md:mr-2" />
-                                        <span className="hidden md:block">Filter</span>
+                                        <span className="hidden md:block ">Filter</span>
                                     </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent className="w-56 bg-white">

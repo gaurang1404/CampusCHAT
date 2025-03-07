@@ -23,6 +23,10 @@ import { EnrollmentDetails } from './EnrollmentDetails';
 import DashboardTab from './DashBoardTab';
 import DepartmentsTab from './DepartmentsTab';
 import SemestersTab from './SemestersTab';
+import SectionsTab from './SectionsTab';
+import StudentsTab from './StudentsTab';
+import FacultyTab from './FacultyTab';
+import CoursesTab from './CoursesTab';
 
 
 // Main component
@@ -191,34 +195,22 @@ const AdminDashboard = () => {
 
               <TabsContent value="sections">
                 {/* Your Sections component will go here */}
-                <div className="p-4 border rounded-lg text-center">
-                  <h2 className="text-xl font-semibold">Sections Tab</h2>
-                  <p className="text-gray-500">Replace with your custom component</p>
-                </div>
+                <SectionsTab/>
               </TabsContent>
 
               <TabsContent value="faculty">
                 {/* Your Faculty component will go here */}
-                <div className="p-4 border rounded-lg text-center">
-                  <h2 className="text-xl font-semibold">Faculty Tab</h2>
-                  <p className="text-gray-500">Replace with your custom component</p>
-                </div>
+                <FacultyTab/>
               </TabsContent>
 
               <TabsContent value="students">
                 {/* Your Students component will go here */}
-                <div className="p-4 border rounded-lg text-center">
-                  <h2 className="text-xl font-semibold">Students Tab</h2>
-                  <p className="text-gray-500">Replace with your custom component</p>
-                </div>
+                <StudentsTab/>
               </TabsContent>
 
               <TabsContent value="courses">
                 {/* Your Courses component will go here */}
-                <div className="p-4 border rounded-lg text-center">
-                  <h2 className="text-xl font-semibold">Courses Tab</h2>
-                  <p className="text-gray-500">Replace with your custom component</p>
-                </div>
+                <CoursesTab/>
               </TabsContent>
             </motion.div>
           </AnimatePresence>

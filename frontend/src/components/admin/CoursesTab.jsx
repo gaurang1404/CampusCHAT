@@ -342,8 +342,9 @@ const CoursesTab = () => {
           Authorization: `Bearer ${token}`,
         },
       }
-
-      const response = await axios.put(`${apiUrl}/api/course/${courseId}/status`, { status: newStatus }, config)
+      console.log(courseId);
+      
+      const response = await axios.patch(`${apiUrl}/api/course/${courseId}/status`, { status: newStatus }, config)
 
       if (response.data.code === 200) {
         toast.success(`Course status updated to ${newStatus}`)

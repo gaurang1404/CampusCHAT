@@ -131,7 +131,7 @@ export const RegistrationComponent = () => {
             className="flex flex-col items-center text-center"
           >
             <motion.div variants={itemVariants} className="mb-10">
-              <h2 className="text-5xl font-extrabold text-[#63144c] mb-4 font-extrabold">
+              <h2 className="text-5xl font-extrabold text-[#63144c] mb-4">
                 Welcome Back!
               </h2>
               <p className="text-2xl text-gray-600 pl-2 pr-2">
@@ -205,7 +205,7 @@ export const RegistrationComponent = () => {
                 whileHover={primaryButtonHover}
                 whileTap={{ scale: 0.98 }}
                 className="text-2xl lg:text-4xl w-[90%] sm:w-[48%] p-10 m-auto sm:m-5 flex justify-center items-center text-white bg-[#63144c] font-extrabold shadow-2xl cursor-pointer"
-                onClick={() => navigate("/student-register")}
+                onClick={() => navigate("/student-login")}
               >
                 Student
               </motion.div>

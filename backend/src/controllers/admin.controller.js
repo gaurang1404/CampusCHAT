@@ -126,9 +126,7 @@ export const loginAdmin = async (req, res) => {
       { userId: admin._id, email: admin.email, role: "Admin", institutionDomain: admin.institutionDomain },
       process.env.JWT_SECRET_KEY, // Ensure you have a secret key stored in your environment variables
       { expiresIn: '30d' } // Token expires in 30 days
-    );
-
-    admin.role = "Admin"
+    );    
 
     // Send success response with token
     logger.info(`${new Date().toISOString()} - Success: Admin logged in successfully`);

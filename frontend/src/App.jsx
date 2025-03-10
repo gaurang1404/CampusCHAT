@@ -5,6 +5,7 @@ import Landing from "./components/home/Landing";
 import AdminRegistrationForm from "./components/auth/AdminRegistrationForm";
 import AdminLoginForm from "./components/auth/AdminLoginForm";
 import AdminDashboard from "./components/admin/AdminDashboard";
+import StudentLoginForm from "./components/auth/StudentLoginForm";
 
 const About = () => <h1>About Page</h1>;
 const Contact = () => <h1>Contact Page</h1>;
@@ -17,7 +18,8 @@ const App = () => {
         <Route path="/" element={<Landing />} />
         <Route path="/admin-register" element={<AdminRegistrationForm />} />        
         <Route path="/admin-login" element={<AdminLoginForm />} />        
-        <Route path="/admin-dashboard" element={<AdminDashboard />} />        
+        <Route path="/admin-dashboard" element={<AdminDashboard />} />     
+        <Route path="/student-login" element={<StudentLoginForm />} />        
       </Routes>
     </Router>
   );

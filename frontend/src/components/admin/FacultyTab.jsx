@@ -306,6 +306,8 @@ const FacultyTab = () => {
                 setServerError(response.data.message || "Failed to update faculty. Please try again.")
             }
         } catch (err) {
+            console.log(err);
+            
             console.error("Error updating faculty:", err)
             const errorMessage = err.response?.data?.message || 
                 "Failed to update faculty. Please check your connection and try again."

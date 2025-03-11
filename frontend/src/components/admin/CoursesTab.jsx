@@ -107,20 +107,11 @@ const CoursesTab = () => {
         },
       }
 
-      // Determine which API endpoint to use based on filters
+      // Get all courses first
       let url = `${apiUrl}/api/course/`
 
-      // If both department and status filters are active
-      if (filterDepartment !== "all" && filterStatus !== "all") {
-        // This is a simplified approach - your actual API might need a different structure
-        url = `${apiUrl}/api/course/?departmentId=${filterDepartment}&status=${filterStatus}`
-      }
-      // If only department filter is active
-      else if (filterDepartment !== "all") {
-        url = `${apiUrl}/api/course/?departmentId=${filterDepartment}`
-      }
-      // If only status filter is active
-      else if (filterStatus !== "all") {
+      // If status filter is active, use the specific endpoint
+      if (filterStatus !== "all") {
         if (filterStatus === "Open") {
           url = `${apiUrl}/api/course/open`
         } else if (filterStatus === "Closed") {
@@ -131,9 +122,16 @@ const CoursesTab = () => {
       }
 
       const response = await axios.get(url, config)
+      let coursesData = response.data.data
 
-      // Assuming the API returns data in a consistent format
-      setCourses(response.data.data)
+      // If department filter is active, filter the results client-side
+      if (filterDepartment !== "all") {
+        coursesData = coursesData.filter(
+          (course) => course.departmentId && course.departmentId._id === filterDepartment,
+        )
+      }
+
+      setCourses(coursesData)
       setError(null)
     } catch (err) {
       setError("Failed to fetch courses. Please try again later.")
@@ -342,8 +340,8 @@ const CoursesTab = () => {
           Authorization: `Bearer ${token}`,
         },
       }
-      console.log(courseId);
-      
+      console.log(courseId)
+
       const response = await axios.patch(`${apiUrl}/api/course/${courseId}/status`, { status: newStatus }, config)
 
       if (response.data.code === 200) {

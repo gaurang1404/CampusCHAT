@@ -201,7 +201,7 @@ export const addCourseFacultyMapping = async (req, res) => {
             });
         }
 
-        const course = await Course.findOne({ courseId, institutionDomain: req.institutionDomain });
+        const course = await Course.findOne({ _id: courseId, institutionDomain: req.institutionDomain });
         if (!course) {
             logger.error(`Course not found for courseId: ${courseId}`);
             return res.status(404).json({
@@ -279,6 +279,7 @@ export const addCourseFacultyMapping = async (req, res) => {
         });
     }
 };
+
 
 export const deleteCourseFacultyMapping = async (req, res) => {
     try {

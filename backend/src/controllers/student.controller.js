@@ -151,6 +151,11 @@ export const addStudent = async (req, res) => {
         // Save Student to DB
         await newStudent.save();
 
+        // Add student to the section
+        await Section.findByIdAndUpdate(sectionId, {
+            $push: { students: newStudent._id }
+        });
+
         logger.info(`New student added successfully: ${newStudent.firstName} ${newStudent.lastName}`);
         return res.status(201).json({ 
             message: "Student added successfully", 
@@ -166,6 +171,7 @@ export const addStudent = async (req, res) => {
         });
     }
 };
+
 
 export const loginStudent = async (req, res) => {
   try {

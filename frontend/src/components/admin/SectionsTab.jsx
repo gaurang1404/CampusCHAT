@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import axios from "axios"
+import { motion, AnimatePresence } from "framer-motion"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -28,7 +29,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toast } from "sonner"
-import { Pencil, Trash2, Plus, Filter } from "lucide-react"
+import { Pencil, Trash2, Plus, Filter, BookOpen, Loader2, Search, List, Grid, ChevronRight } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -38,8 +39,46 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { Badge } from "@/components/ui/badge"
+import { Skeleton } from "@/components/ui/skeleton"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 const apiUrl = import.meta.env.VITE_API_URL
+
+// Animation variants
+const fadeIn = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { duration: 0.4 } },
+  exit: { opacity: 0, transition: { duration: 0.2 } },
+}
+
+const tableRowVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: (i) => ({
+    opacity: 1,
+    y: 0,
+    transition: {
+      delay: i * 0.05,
+      duration: 0.3,
+      ease: "easeOut",
+    },
+  }),
+  exit: { opacity: 0, transition: { duration: 0.2 } },
+}
+
+const cardVariants = {
+  hidden: { opacity: 0, scale: 0.95 },
+  visible: (i) => ({
+    opacity: 1,
+    scale: 1,
+    transition: {
+      delay: i * 0.05,
+      duration: 0.3,
+      ease: "easeOut",
+    },
+  }),
+  exit: { opacity: 0, scale: 0.95, transition: { duration: 0.2 } },
+}
 
 const SectionsTab = () => {
   const [sections, setSections] = useState([])
@@ -54,6 +93,8 @@ const SectionsTab = () => {
   const [serverError, setServerError] = useState(null)
   const [submitting, setSubmitting] = useState(false)
   const [filterSemester, setFilterSemester] = useState("all")
+  const [viewMode, setViewMode] = useState("list") // "list" or "grid"
+  const [expandedSemester, setExpandedSemester] = useState(null)
   const [formData, setFormData] = useState({
     name: "",
     semesterId: "",
@@ -81,6 +122,7 @@ const SectionsTab = () => {
   const [isDeleteMappingDialogOpen, setIsDeleteMappingDialogOpen] = useState(false)
   const [currentMapping, setCurrentMapping] = useState(null)
   const [deletingMapping, setDeletingMapping] = useState(false)
+  const [searchQuery, setSearchQuery] = useState("")
 
   useEffect(() => {
     fetchSemesters()
@@ -96,7 +138,7 @@ const SectionsTab = () => {
 
   useEffect(() => {
     fetchSections()
-  }, [filterSemester])
+  }, [filterSemester, searchQuery])
 
   const fetchSemesters = async () => {
     try {
@@ -123,6 +165,17 @@ const SectionsTab = () => {
           (section) => section.semesterId && section.semesterId._id === filterSemester,
         )
       }
+
+      // Apply search filter if present
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase()
+        filteredSections = filteredSections.filter(
+          (section) =>
+            section.name.toLowerCase().includes(query) ||
+            (section.semesterId && section.semesterId.name.toLowerCase().includes(query)),
+        )
+      }
+
       setSections(filteredSections)
       setError(null)
     } catch (err) {
@@ -437,13 +490,13 @@ const SectionsTab = () => {
         sectionId: currentSection._id,
         mappingId: currentMapping._id,
       }
-      console.log(config);
-      
+      console.log(config)
+
       // Send the request with the proper body
       const response = await axios.delete(`${apiUrl}/api/section/mapping/`, {
         ...config,
         data: requestBody, // Move requestBody inside config
-      });      
+      })
 
       if (response.data.code === 200) {
         // Update the local state to remove the deleted mapping
@@ -474,13 +527,95 @@ const SectionsTab = () => {
     return semester ? semester.name : "Unknown Semester"
   }
 
+  const handleSearch = (e) => {
+    setSearchQuery(e.target.value)
+    // Debounce search to avoid too many re-renders
+    const timeoutId = setTimeout(() => {
+      fetchSections()
+    }, 300)
+    return () => clearTimeout(timeoutId)
+  }
+
+  // Group sections by semester for grid view
+  const getSectionsBySemester = () => {
+    const grouped = {}
+
+    // Initialize with all semesters (even empty ones)
+    semesters.forEach((sem) => {
+      grouped[sem._id] = {
+        semester: sem,
+        sections: [],
+      }
+    })
+
+    // Add sections to their semesters
+    sections.forEach((section) => {
+      if (section.semesterId) {
+        const semId = section.semesterId._id
+        if (grouped[semId]) {
+          grouped[semId].sections.push(section)
+        } else {
+          // In case there's a section with a semester not in our list
+          grouped[semId] = {
+            semester: section.semesterId,
+            sections: [section],
+          }
+        }
+      }
+    })
+
+    // Convert to array and sort
+    return Object.values(grouped).sort((a, b) => a.semester.name.localeCompare(b.semester.name))
+  }
+
+  const toggleSemesterExpansion = (semId) => {
+    if (expandedSemester === semId) {
+      setExpandedSemester(null)
+    } else {
+      setExpandedSemester(semId)
+    }
+  }
+
   return (
-    <div className="p-6 mx-auto">
-      <Card className="max-w-[1200px] border-none">
-        <CardHeader className="bg-[#63144c] text-white">
-          <div className="flex justify-between items-center">
-            <CardTitle className="text-2xl font-bold">Section Management</CardTitle>
-            <div className="flex gap-2">
+    <motion.div className="p-6 mx-auto" initial="hidden" animate="visible" variants={fadeIn}>
+      <Card className="max-w-[1200px] border shadow-lg overflow-hidden">
+        <CardHeader className="bg-gradient-to-r from-[#63144c] to-[#8a1a68] text-white">
+          <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+            <CardTitle className="text-2xl font-bold flex items-center">
+              <BookOpen className="mr-2 h-6 w-6" />
+              Section Management
+            </CardTitle>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <div className="relative w-full md:w-64">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-white opacity-70" />
+                <Input
+                  placeholder="Search sections..."
+                  className="pl-8 bg-white/10 border-white/20 text-white placeholder:text-white/70 w-full"
+                  value={searchQuery}
+                  onChange={handleSearch}
+                />
+              </div>
+
+              {/* View Mode Toggle */}
+              <Tabs value={viewMode} onValueChange={setViewMode} className="w-auto">
+                <TabsList className="bg-white/10 border-white/20">
+                  <TabsTrigger
+                    value="list"
+                    className="data-[state=active]:bg-white data-[state=active]:text-[#63144c] text-white"
+                  >
+                    <List className="h-4 w-4 mr-2" />
+                    List
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="grid"
+                    className="data-[state=active]:bg-white data-[state=active]:text-[#63144c] text-white"
+                  >
+                    <Grid className="h-4 w-4 mr-2" />
+                    Grid
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+
               <Dialog
                 open={isCourseFacultyDialogOpen}
                 onOpenChange={(open) => {
@@ -489,9 +624,10 @@ const SectionsTab = () => {
                 }}
               >
                 <DialogTrigger asChild>
-                  <Button className="flex items-center gap-2 mr-2 bg-green-600 hover:bg-green-700">
+                  <Button className="flex items-center gap-2 bg-green-600 hover:bg-green-700 transition-colors duration-300 shadow-md">
                     <Plus size={16} />
                     <span className="hidden md:block">Add Course-Faculty</span>
+                    <span className="md:hidden">Add C-F</span>
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-lg bg-white">
@@ -502,12 +638,14 @@ const SectionsTab = () => {
                     Associate a course with a faculty member for a specific section.
                   </DialogDescription>
                   {serverError && (
-                    <div
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
                       className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative"
                       role="alert"
                     >
                       <span className="block sm:inline">{serverError}</span>
-                    </div>
+                    </motion.div>
                   )}
                   <div className="grid gap-4 py-4">
                     <div className="grid gap-2">
@@ -516,7 +654,9 @@ const SectionsTab = () => {
                         onValueChange={(value) => handleMappingInputChange("sectionId", value)}
                         value={mappingFormData.sectionId}
                       >
-                        <SelectTrigger className={mappingFormErrors.sectionId ? "border-red-500" : ""}>
+                        <SelectTrigger
+                          className={`${mappingFormErrors.sectionId ? "border-red-500 ring-red-200" : ""} transition-all duration-200`}
+                        >
                           <SelectValue placeholder="Select a section" />
                         </SelectTrigger>
                         <SelectContent className="bg-white">
@@ -528,7 +668,9 @@ const SectionsTab = () => {
                         </SelectContent>
                       </Select>
                       {mappingFormErrors.sectionId && (
-                        <p className="text-sm text-red-500">{mappingFormErrors.sectionId}</p>
+                        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-sm text-red-500">
+                          {mappingFormErrors.sectionId}
+                        </motion.p>
                       )}
                     </div>
 
@@ -538,7 +680,9 @@ const SectionsTab = () => {
                         onValueChange={(value) => handleMappingInputChange("courseId", value)}
                         value={mappingFormData.courseId}
                       >
-                        <SelectTrigger className={mappingFormErrors.courseId ? "border-red-500" : ""}>
+                        <SelectTrigger
+                          className={`${mappingFormErrors.courseId ? "border-red-500 ring-red-200" : ""} transition-all duration-200`}
+                        >
                           <SelectValue placeholder="Search and select a course" />
                         </SelectTrigger>
                         <SelectContent className="bg-white max-h-[200px] overflow-y-auto">
@@ -562,7 +706,9 @@ const SectionsTab = () => {
                         </SelectContent>
                       </Select>
                       {mappingFormErrors.courseId && (
-                        <p className="text-sm text-red-500">{mappingFormErrors.courseId}</p>
+                        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-sm text-red-500">
+                          {mappingFormErrors.courseId}
+                        </motion.p>
                       )}
                     </div>
 
@@ -572,7 +718,9 @@ const SectionsTab = () => {
                         onValueChange={(value) => handleMappingInputChange("facultyId", value)}
                         value={mappingFormData.facultyId}
                       >
-                        <SelectTrigger className={mappingFormErrors.facultyId ? "border-red-500" : ""}>
+                        <SelectTrigger
+                          className={`${mappingFormErrors.facultyId ? "border-red-500 ring-red-200" : ""} transition-all duration-200`}
+                        >
                           <SelectValue placeholder="Search and select a faculty member" />
                         </SelectTrigger>
                         <SelectContent className="bg-white max-h-[200px] overflow-y-auto">
@@ -596,7 +744,9 @@ const SectionsTab = () => {
                         </SelectContent>
                       </Select>
                       {mappingFormErrors.facultyId && (
-                        <p className="text-sm text-red-500">{mappingFormErrors.facultyId}</p>
+                        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-sm text-red-500">
+                          {mappingFormErrors.facultyId}
+                        </motion.p>
                       )}
                     </div>
                   </div>
@@ -610,35 +760,51 @@ const SectionsTab = () => {
                         }
                       }}
                       disabled={submitting}
-                      className="mt-3"
+                      className="mt-3 transition-all duration-200"
                     >
                       Cancel
                     </Button>
 
                     <Button
-                      className="bg-[#63144c] text-white mt-3 hover:bg-[#5f0a47] hover:text-white"
+                      className="bg-[#63144c] text-white mt-3 hover:bg-[#5f0a47] hover:text-white transition-all duration-200 shadow-md"
                       onClick={handleAddCourseFacultyMapping}
                       disabled={submitting}
                     >
-                      {submitting ? "Adding..." : "Add Mapping"}
+                      {submitting ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Adding...
+                        </>
+                      ) : (
+                        "Add Mapping"
+                      )}
                     </Button>
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="bg-white text-[#63144c] hover:bg-gray-100 hover:text-black">
+                  <Button
+                    variant="outline"
+                    className="bg-white text-[#63144c] hover:bg-gray-100 hover:text-[#63144c] transition-colors duration-300 shadow-md"
+                  >
                     <Filter size={16} className="md:mr-2" />
-                    <span className="hidden md:block ">Filter</span>
+                    <span className="hidden md:block">Filter</span>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56 bg-white">
+                <DropdownMenuContent className="w-56 bg-white shadow-lg border-none">
                   <DropdownMenuLabel>Filter by Semester</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuRadioGroup value={filterSemester} onValueChange={setFilterSemester}>
-                    <DropdownMenuRadioItem value="all">All Semesters</DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="all" className="cursor-pointer transition-colors">
+                      All Semesters
+                    </DropdownMenuRadioItem>
                     {semesters.map((semester) => (
-                      <DropdownMenuRadioItem key={semester._id} value={semester._id}>
+                      <DropdownMenuRadioItem
+                        key={semester._id}
+                        value={semester._id}
+                        className="cursor-pointer transition-colors"
+                      >
                         {semester.name}
                       </DropdownMenuRadioItem>
                     ))}
@@ -654,9 +820,10 @@ const SectionsTab = () => {
                 }}
               >
                 <DialogTrigger asChild>
-                  <Button className="flex items-center gap-2">
+                  <Button className="flex items-center gap-2 transition-colors duration-300 shadow-md">
                     <Plus size={16} />
                     <span className="hidden md:block">Add Section</span>
+                    <span className="md:hidden">Add</span>
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-lg bg-white">
@@ -665,12 +832,14 @@ const SectionsTab = () => {
                   </DialogHeader>
                   <DialogDescription>Fill in the details to create a new section.</DialogDescription>
                   {serverError && (
-                    <div
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
                       className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative"
                       role="alert"
                     >
                       <span className="block sm:inline">{serverError}</span>
-                    </div>
+                    </motion.div>
                   )}
                   <div className="grid gap-4 py-4">
                     <div className="grid gap-2">
@@ -682,9 +851,13 @@ const SectionsTab = () => {
                         onChange={handleInputChange}
                         required
                         placeholder="Enter section name"
-                        className={formErrors.name ? "border-red-500" : ""}
+                        className={`${formErrors.name ? "border-red-500 ring-red-200" : ""} transition-all duration-200`}
                       />
-                      {formErrors.name && <p className="text-sm text-red-500">{formErrors.name}</p>}
+                      {formErrors.name && (
+                        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-sm text-red-500">
+                          {formErrors.name}
+                        </motion.p>
+                      )}
                     </div>
                     <div className="grid gap-2">
                       <Label htmlFor="semesterId">Semester</Label>
@@ -693,7 +866,9 @@ const SectionsTab = () => {
                         value={formData.semesterId}
                         key={formData.semesterId}
                       >
-                        <SelectTrigger className={formErrors.semesterId ? "border-red-500" : ""}>
+                        <SelectTrigger
+                          className={`${formErrors.semesterId ? "border-red-500 ring-red-200" : ""} transition-all duration-200`}
+                        >
                           <SelectValue placeholder="Select a semester" />
                         </SelectTrigger>
                         <SelectContent className="bg-white">
@@ -704,7 +879,11 @@ const SectionsTab = () => {
                           ))}
                         </SelectContent>
                       </Select>
-                      {formErrors.semesterId && <p className="text-sm text-red-500">{formErrors.semesterId}</p>}
+                      {formErrors.semesterId && (
+                        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-sm text-red-500">
+                          {formErrors.semesterId}
+                        </motion.p>
+                      )}
                     </div>
                   </div>
                   <DialogFooter>
@@ -717,17 +896,24 @@ const SectionsTab = () => {
                         }
                       }}
                       disabled={submitting}
-                      className="mt-3"
+                      className="mt-3 transition-all duration-200"
                     >
                       Cancel
                     </Button>
 
                     <Button
-                      className="bg-[#63144c] text-white mt-3 hover:bg-[#5f0a47] hover:text-white"
+                      className="bg-[#63144c] text-white mt-3 hover:bg-[#5f0a47] hover:text-white transition-all duration-200 shadow-md"
                       onClick={handleAddSection}
                       disabled={submitting}
                     >
-                      {submitting ? "Adding..." : "Add Section"}
+                      {submitting ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Adding...
+                        </>
+                      ) : (
+                        "Add Section"
+                      )}
                     </Button>
                   </DialogFooter>
                 </DialogContent>
@@ -737,14 +923,39 @@ const SectionsTab = () => {
         </CardHeader>
         <CardContent className="p-0">
           {loading ? (
-            <div className="flex justify-center items-center p-8">
-              <div className="animate-spin h-8 w-8 border-4 border-blue-500 rounded-full border-t-transparent"></div>
+            <div className="flex flex-col gap-4 p-6">
+              <div className="flex items-center space-x-4">
+                <Skeleton className="h-12 w-12 rounded-full" />
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-[250px]" />
+                  <Skeleton className="h-4 w-[200px]" />
+                </div>
+              </div>
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="flex items-center space-x-4">
+                  <Skeleton className="h-12 w-12 rounded-full" />
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-[250px]" />
+                    <Skeleton className="h-4 w-[200px]" />
+                  </div>
+                </div>
+              ))}
             </div>
           ) : error ? (
-            <div className="p-6 text-center text-red-500">{error}</div>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-6 text-center text-red-500">
+              {error}
+            </motion.div>
           ) : sections.length === 0 ? (
-            <div className="p-6 text-center text-gray-500">No sections found. Add a section to get started.</div>
-          ) : (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="p-12 text-center text-gray-500 flex flex-col items-center justify-center"
+            >
+              <BookOpen className="h-16 w-16 text-gray-300 mb-4" />
+              <p className="text-lg">No sections found. Add a section to get started.</p>
+            </motion.div>
+          ) : viewMode === "list" ? (
+            // List View
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
@@ -757,59 +968,214 @@ const SectionsTab = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {sections.map((section) => (
-                    <TableRow key={section._id}>
-                      <TableCell className="font-medium">{section.name}</TableCell>
-                      <TableCell>{section.semesterId ? section.semesterId.name : "N/A"}</TableCell>
-                      <TableCell>{section.students ? section.students.length : 0}</TableCell>
-                      <TableCell>{section.courseFacultyMappings ? section.courseFacultyMappings.length : 0}</TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="text-blue-500 hover:text-blue-700"
-                            onClick={() => openViewMappingsDialog(section)}
-                            title="View Mappings"
-                          >
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              width="16"
-                              height="16"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
+                  <AnimatePresence>
+                    {sections.map((section, index) => (
+                      <motion.tr
+                        key={section._id}
+                        custom={index}
+                        initial="hidden"
+                        animate="visible"
+                        exit="exit"
+                        variants={tableRowVariants}
+                        className="border-b transition-colors hover:bg-gray-50/50"
+                      >
+                        <TableCell className="font-medium">{section.name}</TableCell>
+                        <TableCell>
+                          {section.semesterId ? (
+                            <Badge variant="outline" className="bg-[#63144c]/10 text-[#63144c] border-[#63144c]/20">
+                              {section.semesterId.name}
+                            </Badge>
+                          ) : (
+                            "N/A"
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="secondary" className="bg-blue-100 text-blue-800 hover:bg-blue-200">
+                            {section.students ? section.students.length : 0}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="secondary" className="bg-green-100 text-green-800 hover:bg-green-200">
+                            {section.courseFacultyMappings ? section.courseFacultyMappings.length : 0}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 transition-colors"
+                              onClick={() => openViewMappingsDialog(section)}
+                              title="View Mappings"
                             >
-                              <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
-                              <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
-                            </svg>
-                          </Button>
-                          <Button variant="outline" size="icon" onClick={() => openEditDialog(section)}>
-                            <Pencil size={16} />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="text-red-500 hover:text-red-700"
-                            onClick={() => openDeleteDialog(section)}
-                          >
-                            <Trash2 size={16} />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="16"
+                                height="16"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              >
+                                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                                <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+                              </svg>
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="text-amber-500 hover:text-amber-700 hover:bg-amber-50 transition-colors"
+                              onClick={() => openEditDialog(section)}
+                            >
+                              <Pencil size={16} />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="text-red-500 hover:text-red-700 hover:bg-red-50 transition-colors"
+                              onClick={() => openDeleteDialog(section)}
+                            >
+                              <Trash2 size={16} />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </motion.tr>
+                    ))}
+                  </AnimatePresence>
                 </TableBody>
               </Table>
             </div>
+          ) : (
+            // Grid View - Grouped by Semester
+            <div className="p-4">
+              <AnimatePresence>
+                {getSectionsBySemester().map((group, groupIndex) => (
+                  <motion.div
+                    key={group.semester._id}
+                    custom={groupIndex}
+                    initial="hidden"
+                    animate="visible"
+                    exit="exit"
+                    variants={cardVariants}
+                    className="mb-6"
+                  >
+                    <Card className="border shadow-sm overflow-hidden">
+                      <CardHeader
+                        className="bg-gradient-to-r from-[#63144c]/5 to-[#8a1a68]/5 p-4 cursor-pointer"
+                        onClick={() => toggleSemesterExpansion(group.semester._id)}
+                      >
+                        <div className="flex justify-between items-center">
+                          <CardTitle className="text-lg font-medium flex items-center">
+                            <BookOpen className="mr-2 h-5 w-5 text-[#63144c]" />
+                            {group.semester.name}
+                            <Badge className="ml-3 bg-[#63144c]/10 text-[#63144c] hover:bg-[#63144c]/20 border-[#63144c]/20">
+                              {group.sections.length} {group.sections.length === 1 ? "section" : "sections"}
+                            </Badge>
+                          </CardTitle>
+                          <ChevronRight
+                            className={`h-5 w-5 text-[#63144c] transition-transform duration-200 ${
+                              expandedSemester === group.semester._id ? "rotate-90" : ""
+                            }`}
+                          />
+                        </div>
+                      </CardHeader>
+
+                      {expandedSemester === group.semester._id && (
+                        <CardContent className="p-4">
+                          {group.sections.length === 0 ? (
+                            <div className="text-center text-gray-500 py-4">No sections found for this semester</div>
+                          ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                              <AnimatePresence>
+                                {group.sections.map((section, secIndex) => (
+                                  <motion.div
+                                    key={section._id}
+                                    custom={secIndex}
+                                    initial="hidden"
+                                    animate="visible"
+                                    exit="exit"
+                                    variants={cardVariants}
+                                  >
+                                    <Card className="border shadow-sm hover:shadow-md transition-shadow duration-200">
+                                      <CardContent className="p-4">
+                                        <div className="flex justify-between items-start mb-2">
+                                          <div className="font-medium text-lg">{section.name}</div>
+                                        </div>
+                                        <div className="text-sm text-gray-500 mb-3">
+                                          <div className="flex items-center gap-2 mb-1">
+                                            <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                                              {section.students ? section.students.length : 0} Students
+                                            </Badge>
+                                            <Badge variant="secondary" className="bg-green-100 text-green-800">
+                                              {section.courseFacultyMappings ? section.courseFacultyMappings.length : 0}{" "}
+                                              Courses
+                                            </Badge>
+                                          </div>
+                                        </div>
+                                        <div className="flex justify-end gap-2 mt-2">
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 transition-colors"
+                                            onClick={() => openViewMappingsDialog(section)}
+                                          >
+                                            <svg
+                                              xmlns="http://www.w3.org/2000/svg"
+                                              width="14"
+                                              height="14"
+                                              viewBox="0 0 24 24"
+                                              fill="none"
+                                              stroke="currentColor"
+                                              strokeWidth="2"
+                                              strokeLinecap="round"
+                                              strokeLinejoin="round"
+                                              className="mr-1"
+                                            >
+                                              <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                                              <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+                                            </svg>
+                                            Mappings
+                                          </Button>
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="text-amber-500 hover:text-amber-700 hover:bg-amber-50 transition-colors"
+                                            onClick={() => openEditDialog(section)}
+                                          >
+                                            <Pencil size={14} className="mr-1" />
+                                            Edit
+                                          </Button>
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="text-red-500 hover:text-red-700 hover:bg-red-50 transition-colors"
+                                            onClick={() => openDeleteDialog(section)}
+                                          >
+                                            <Trash2 size={14} className="mr-1" />
+                                            Delete
+                                          </Button>
+                                        </div>
+                                      </CardContent>
+                                    </Card>
+                                  </motion.div>
+                                ))}
+                              </AnimatePresence>
+                            </div>
+                          )}
+                        </CardContent>
+                      )}
+                    </Card>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
           )}
         </CardContent>
-        <CardFooter className="flex justify-between border-t p-4">
+        <CardFooter className="flex justify-between border-t p-4 bg-gray-50/50">
           <div className="text-sm text-gray-500">Total: {sections.length} section(s)</div>
-          <Button variant="outline" onClick={fetchSections}>
+          <Button variant="outline" onClick={fetchSections} className="transition-all duration-200 hover:bg-gray-100">
             Refresh
           </Button>
         </CardFooter>
@@ -831,9 +1197,14 @@ const SectionsTab = () => {
           </DialogHeader>
           <DialogDescription>Make changes to the section information below.</DialogDescription>
           {serverError && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative" role="alert">
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative"
+              role="alert"
+            >
               <span className="block sm:inline">{serverError}</span>
-            </div>
+            </motion.div>
           )}
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
@@ -843,9 +1214,13 @@ const SectionsTab = () => {
                 name="name"
                 value={formData.name}
                 onChange={handleInputChange}
-                className={formErrors.name ? "border-red-500" : ""}
+                className={`${formErrors.name ? "border-red-500 ring-red-200" : ""} transition-all duration-200`}
               />
-              {formErrors.name && <p className="text-sm text-red-500">{formErrors.name}</p>}
+              {formErrors.name && (
+                <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-sm text-red-500">
+                  {formErrors.name}
+                </motion.p>
+              )}
             </div>
             <div className="grid gap-2">
               <Label htmlFor="edit-semesterId">Semester</Label>
@@ -854,7 +1229,9 @@ const SectionsTab = () => {
                 value={formData.semesterId}
                 key={formData.semesterId}
               >
-                <SelectTrigger className={formErrors.semesterId ? "border-red-500" : ""}>
+                <SelectTrigger
+                  className={`${formErrors.semesterId ? "border-red-500 ring-red-200" : ""} transition-all duration-200`}
+                >
                   <SelectValue placeholder="Select a semester" />
                 </SelectTrigger>
                 <SelectContent className="bg-white">
@@ -865,7 +1242,11 @@ const SectionsTab = () => {
                   ))}
                 </SelectContent>
               </Select>
-              {formErrors.semesterId && <p className="text-sm text-red-500">{formErrors.semesterId}</p>}
+              {formErrors.semesterId && (
+                <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-sm text-red-500">
+                  {formErrors.semesterId}
+                </motion.p>
+              )}
             </div>
           </div>
           <DialogFooter>
@@ -878,15 +1259,23 @@ const SectionsTab = () => {
                 }
               }}
               disabled={submitting}
+              className="transition-all duration-200"
             >
               Cancel
             </Button>
             <Button
               onClick={handleUpdateSection}
               disabled={submitting}
-              className="bg-[#63144c] text-white hover:bg-[#6c0e51] hover:text-white"
+              className="bg-[#63144c] text-white hover:bg-[#6c0e51] hover:text-white transition-all duration-200 shadow-md"
             >
-              {submitting ? "Updating..." : "Update Section"}
+              {submitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Updating...
+                </>
+              ) : (
+                "Update Section"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -907,13 +1296,22 @@ const SectionsTab = () => {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={submitting}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={submitting} className="transition-all duration-200">
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteSection}
-              className="bg-red-500 hover:bg-red-600 text-white"
+              className="bg-red-500 hover:bg-red-600 text-white transition-all duration-200 shadow-md"
               disabled={submitting}
             >
-              {submitting ? "Deleting..." : "Delete"}
+              {submitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                "Delete"
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -923,11 +1321,21 @@ const SectionsTab = () => {
       <Dialog open={isViewMappingsDialogOpen} onOpenChange={(open) => setIsViewMappingsDialogOpen(open)}>
         <DialogContent className="sm:max-w-lg bg-white">
           <DialogHeader>
-            <DialogTitle>Course-Faculty Mappings for {selectedSectionName}</DialogTitle>
+            <DialogTitle className="flex items-center">
+              <BookOpen className="mr-2 h-5 w-5" />
+              Course-Faculty Mappings for {selectedSectionName}
+            </DialogTitle>
           </DialogHeader>
           <div className="max-h-[60vh] overflow-y-auto">
             {selectedSectionMappings.length === 0 ? (
-              <div className="p-4 text-center text-gray-500">No mappings found for this section.</div>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="p-8 text-center text-gray-500 flex flex-col items-center"
+              >
+                <BookOpen className="h-12 w-12 text-gray-300 mb-2" />
+                <p>No mappings found for this section.</p>
+              </motion.div>
             ) : (
               <Table>
                 <TableHeader>
@@ -938,34 +1346,53 @@ const SectionsTab = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {selectedSectionMappings.map((mapping) => (
-                    <TableRow key={mapping._id}>
-                      <TableCell>
-                        {mapping.courseId ? `${mapping.courseId.courseCode}: ${mapping.courseId.name}` : "N/A"}
-                      </TableCell>
-                      <TableCell>
-                        {mapping.facultyId
-                          ? `${mapping.facultyId.firstName} ${mapping.facultyId.lastName} (${mapping.facultyId.facultyId})`
-                          : "N/A"}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="text-red-500 hover:text-red-700"
-                          onClick={() => openDeleteMappingDialog(mapping)}
-                        >
-                          <Trash2 size={16} />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  <AnimatePresence>
+                    {selectedSectionMappings.map((mapping, index) => (
+                      <motion.tr
+                        key={mapping._id}
+                        custom={index}
+                        initial="hidden"
+                        animate="visible"
+                        exit="exit"
+                        variants={tableRowVariants}
+                        className="border-b transition-colors hover:bg-gray-50/50"
+                      >
+                        <TableCell>
+                          <div className="font-medium">{mapping.courseId ? mapping.courseId.courseCode : "N/A"}</div>
+                          <div className="text-sm text-gray-500">{mapping.courseId ? mapping.courseId.name : ""}</div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="font-medium">
+                            {mapping.facultyId ? `${mapping.facultyId.firstName} ${mapping.facultyId.lastName}` : "N/A"}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {mapping.facultyId ? mapping.facultyId.facultyId : ""}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-red-500 hover:text-red-700 hover:bg-red-50 transition-colors"
+                            onClick={() => openDeleteMappingDialog(mapping)}
+                          >
+                            <Trash2 size={16} />
+                          </Button>
+                        </TableCell>
+                      </motion.tr>
+                    ))}
+                  </AnimatePresence>
                 </TableBody>
               </Table>
             )}
           </div>
           <DialogFooter>
-            <Button onClick={() => setIsViewMappingsDialogOpen(false)}>Close</Button>
+            <Button
+              onClick={() => setIsViewMappingsDialogOpen(false)}
+              className="transition-all duration-200 shadow-md"
+            >
+              Close
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -990,18 +1417,27 @@ const SectionsTab = () => {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deletingMapping}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={deletingMapping} className="transition-all duration-200">
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteMapping}
-              className="bg-red-500 hover:bg-red-600 text-white"
+              className="bg-red-500 hover:bg-red-600 text-white transition-all duration-200 shadow-md"
               disabled={deletingMapping}
             >
-              {deletingMapping ? "Deleting..." : "Delete"}
+              {deletingMapping ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                "Delete"
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </motion.div>
   )
 }
 

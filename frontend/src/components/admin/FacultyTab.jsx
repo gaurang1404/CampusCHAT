@@ -1,5 +1,8 @@
+"use client"
+
 import { useState, useEffect } from "react"
 import axios from "axios"
+import { motion, AnimatePresence } from "framer-motion"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -24,7 +27,7 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 import { toast } from "sonner"
-import { Pencil, Trash2, Plus, Filter, Eye, Search } from 'lucide-react'
+import { Pencil, Trash2, Plus, Filter, Eye, Search, Users, Loader2 } from 'lucide-react'
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -35,8 +38,31 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Badge } from "@/components/ui/badge"
+import { Skeleton } from "@/components/ui/skeleton"
 
 const apiUrl = import.meta.env.VITE_API_URL
+
+// Animation variants
+const fadeIn = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { duration: 0.4 } },
+  exit: { opacity: 0, transition: { duration: 0.2 } },
+}
+
+const tableRowVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: (i) => ({
+    opacity: 1,
+    y: 0,
+    transition: {
+      delay: i * 0.05,
+      duration: 0.3,
+      ease: "easeOut",
+    },
+  }),
+  exit: { opacity: 0, transition: { duration: 0.2 } },
+}
 
 const FacultyTab = () => {
     const [faculties, setFaculties] = useState([])
@@ -82,7 +108,7 @@ const FacultyTab = () => {
     // Fetch faculties with filters
     useEffect(() => {
         fetchFaculties()
-    }, [filterDepartment, filterDesignation])
+    }, [filterDepartment, filterDesignation, searchQuery])
 
     const fetchDepartments = async () => {
         try {
@@ -391,7 +417,7 @@ const FacultyTab = () => {
         // Debounce search to avoid too many re-renders
         const timeoutId = setTimeout(() => {
             fetchFaculties()
-        }, 500)
+        }, 300)
         return () => clearTimeout(timeoutId)
     }
 
@@ -407,17 +433,20 @@ const FacultyTab = () => {
     }
 
     return (
-        <div className="p-6 mx-auto">
-            <Card className="max-w-[1200px] border-none">
-                <CardHeader className="bg-[#63144c] text-white">
-                    <div className="flex justify-between items-center">
-                        <CardTitle className="text-2xl font-bold">Faculty Management</CardTitle>
-                        <div className="flex gap-2">
-                            <div className="relative w-64 hidden md:block">
-                                <Search className="absolute left-2 top-2.5 h-4 w-4 text-white opacity-70" />
+        <motion.div className="p-6 mx-auto" initial="hidden" animate="visible" variants={fadeIn}>
+            <Card className="max-w-[1200px] border shadow-lg overflow-hidden">
+                <CardHeader className="bg-gradient-to-r from-[#63144c] to-[#8a1a68] text-white">
+                    <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+                        <CardTitle className="text-2xl font-bold flex items-center">
+                            <Users className="mr-2 h-6 w-6" />
+                            Faculty Management
+                        </CardTitle>
+                        <div className="flex flex-col sm:flex-row gap-2">
+                            <div className="relative w-full md:w-64">
+                                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-white opacity-70" />
                                 <Input
                                     placeholder="Search faculty..."
-                                    className="pl-8 bg-white/10 border-white/20 text-white placeholder:text-white/70"
+                                    className="pl-8 bg-white/10 border-white/20 text-white placeholder:text-white/70 w-full"
                                     value={searchQuery}
                                     onChange={handleSearch}
                                 />
@@ -425,20 +454,22 @@ const FacultyTab = () => {
                             
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                    <Button variant="outline" className="bg-white text-[#63144c] hover:bg-gray-100 hover:text-black">
+                                    <Button variant="outline" className="bg-white text-[#63144c] hover:bg-gray-100 hover:text-[#63144c] transition-colors duration-300 shadow-md">
                                         <Filter size={16} className="md:mr-2" />
                                         <span className="hidden md:block">Filter</span>
                                     </Button>
                                 </DropdownMenuTrigger>
-                                <DropdownMenuContent className="w-56 bg-white">
+                                <DropdownMenuContent className="w-56 bg-white shadow-lg border-none">
                                     <DropdownMenuLabel>Filter Options</DropdownMenuLabel>
                                     <DropdownMenuSeparator />
                                     
                                     <DropdownMenuLabel className="text-xs font-normal text-muted-foreground pt-2">Department</DropdownMenuLabel>
                                     <DropdownMenuRadioGroup value={filterDepartment} onValueChange={setFilterDepartment}>
-                                        <DropdownMenuRadioItem value="all">All Departments</DropdownMenuRadioItem>
+                                        <DropdownMenuRadioItem value="all" className="cursor-pointer transition-colors">
+                                            All Departments
+                                        </DropdownMenuRadioItem>
                                         {departments.map((department) => (
-                                            <DropdownMenuRadioItem key={department._id} value={department._id}>
+                                            <DropdownMenuRadioItem key={department._id} value={department._id} className="cursor-pointer transition-colors">
                                                 {department.name}
                                             </DropdownMenuRadioItem>
                                         ))}
@@ -447,9 +478,11 @@ const FacultyTab = () => {
                                     <DropdownMenuSeparator />
                                     <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">Designation</DropdownMenuLabel>
                                     <DropdownMenuRadioGroup value={filterDesignation} onValueChange={setFilterDesignation}>
-                                        <DropdownMenuRadioItem value="all">All Designations</DropdownMenuRadioItem>
+                                        <DropdownMenuRadioItem value="all" className="cursor-pointer transition-colors">
+                                            All Designations
+                                        </DropdownMenuRadioItem>
                                         {designations.map((designation) => (
-                                            <DropdownMenuRadioItem key={designation} value={designation}>
+                                            <DropdownMenuRadioItem key={designation} value={designation} className="cursor-pointer transition-colors">
                                                 {designation}
                                             </DropdownMenuRadioItem>
                                         ))}
@@ -465,9 +498,10 @@ const FacultyTab = () => {
                                 }}
                             >
                                 <DialogTrigger asChild>
-                                    <Button className="flex items-center gap-2">
+                                    <Button className="flex items-center gap-2 transition-colors duration-300 shadow-md">
                                         <Plus size={16} />
                                         <span className="hidden md:block">Add Faculty</span>
+                                        <span className="md:hidden">Add</span>
                                     </Button>
                                 </DialogTrigger>
                                 <DialogContent className="sm:max-w-lg bg-white">
@@ -476,12 +510,14 @@ const FacultyTab = () => {
                                     </DialogHeader>
                                     <DialogDescription>Fill in the faculty details below.</DialogDescription>
                                     {serverError && (
-                                        <div
+                                        <motion.div
+                                            initial={{ opacity: 0, y: -10 }}
+                                            animate={{ opacity: 1, y: 0 }}
                                             className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative"
                                             role="alert"
                                         >
                                             <span className="block sm:inline">{serverError}</span>
-                                        </div>
+                                        </motion.div>
                                     )}
                                     
                                     <Tabs defaultValue="basic" className="w-full">
@@ -502,9 +538,13 @@ const FacultyTab = () => {
                                                             onChange={handleInputChange}
                                                             required
                                                             placeholder="Enter first name"
-                                                            className={formErrors.firstName ? "border-red-500" : ""}
+                                                            className={`${formErrors.firstName ? "border-red-500 ring-red-200" : ""} transition-all duration-200`}
                                                         />
-                                                        {formErrors.firstName && <p className="text-sm text-red-500">{formErrors.firstName}</p>}
+                                                        {formErrors.firstName && (
+                                                            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-sm text-red-500">
+                                                                {formErrors.firstName}
+                                                            </motion.p>
+                                                        )}
                                                     </div>
                                                     <div className="grid gap-2">
                                                         <Label htmlFor="lastName">Last Name</Label>
@@ -515,9 +555,13 @@ const FacultyTab = () => {
                                                             onChange={handleInputChange}
                                                             required
                                                             placeholder="Enter last name"
-                                                            className={formErrors.lastName ? "border-red-500" : ""}
+                                                            className={`${formErrors.lastName ? "border-red-500 ring-red-200" : ""} transition-all duration-200`}
                                                         />
-                                                        {formErrors.lastName && <p className="text-sm text-red-500">{formErrors.lastName}</p>}
+                                                        {formErrors.lastName && (
+                                                            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-sm text-red-500">
+                                                                {formErrors.lastName}
+                                                            </motion.p>
+                                                        )}
                                                     </div>
                                                 </div>
                                                 
@@ -530,9 +574,13 @@ const FacultyTab = () => {
                                                         onChange={handleInputChange}
                                                         required
                                                         placeholder="Enter faculty ID"
-                                                        className={formErrors.facultyId ? "border-red-500" : ""}
+                                                        className={`${formErrors.facultyId ? "border-red-500 ring-red-200" : ""} transition-all duration-200`}
                                                     />
-                                                    {formErrors.facultyId && <p className="text-sm text-red-500">{formErrors.facultyId}</p>}
+                                                    {formErrors.facultyId && (
+                                                        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-sm text-red-500">
+                                                            {formErrors.facultyId}
+                                                        </motion.p>
+                                                    )}
                                                 </div>
                                                 
                                                 <div className="grid gap-2">
@@ -544,9 +592,13 @@ const FacultyTab = () => {
                                                         onChange={handleInputChange}
                                                         required
                                                         placeholder="Enter email"
-                                                        className={formErrors.email ? "border-red-500" : ""}
+                                                        className={`${formErrors.email ? "border-red-500 ring-red-200" : ""} transition-all duration-200`}
                                                     />
-                                                    {formErrors.email && <p className="text-sm text-red-500">{formErrors.email}</p>}
+                                                    {formErrors.email && (
+                                                        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-sm text-red-500">
+                                                            {formErrors.email}
+                                                        </motion.p>
+                                                    )}
                                                 </div>
                                                 
                                                 <div className="grid gap-2">
@@ -558,9 +610,13 @@ const FacultyTab = () => {
                                                         onChange={handleInputChange}
                                                         required
                                                         placeholder="Enter 10-digit phone number"
-                                                        className={formErrors.phone ? "border-red-500" : ""}
+                                                        className={`${formErrors.phone ? "border-red-500 ring-red-200" : ""} transition-all duration-200`}
                                                     />
-                                                    {formErrors.phone && <p className="text-sm text-red-500">{formErrors.phone}</p>}
+                                                    {formErrors.phone && (
+                                                        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-sm text-red-500">
+                                                            {formErrors.phone}
+                                                        </motion.p>
+                                                    )}
                                                 </div>
                                                 
                                                 <div className="grid gap-2">
@@ -573,9 +629,13 @@ const FacultyTab = () => {
                                                         onChange={handleInputChange}
                                                         required
                                                         placeholder="Enter password (min. 8 characters)"
-                                                        className={formErrors.password ? "border-red-500" : ""}
+                                                        className={`${formErrors.password ? "border-red-500 ring-red-200" : ""} transition-all duration-200`}
                                                     />
-                                                    {formErrors.password && <p className="text-sm text-red-500">{formErrors.password}</p>}
+                                                    {formErrors.password && (
+                                                        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-sm text-red-500">
+                                                            {formErrors.password}
+                                                        </motion.p>
+                                                    )}
                                                 </div>
                                             </div>
                                         </TabsContent>
@@ -589,7 +649,7 @@ const FacultyTab = () => {
                                                         value={formData.departmentId}
                                                         key={`dept-${formData.departmentId}`}
                                                     >
-                                                        <SelectTrigger className={formErrors.departmentId ? "border-red-500" : ""}>
+                                                        <SelectTrigger className={`${formErrors.departmentId ? "border-red-500 ring-red-200" : ""} transition-all duration-200`}>
                                                             <SelectValue placeholder="Select a department" />
                                                         </SelectTrigger>
                                                         <SelectContent className='bg-white'>
@@ -600,7 +660,11 @@ const FacultyTab = () => {
                                                             ))}
                                                         </SelectContent>
                                                     </Select>
-                                                    {formErrors.departmentId && <p className="text-sm text-red-500">{formErrors.departmentId}</p>}
+                                                    {formErrors.departmentId && (
+                                                        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-sm text-red-500">
+                                                            {formErrors.departmentId}
+                                                        </motion.p>
+                                                    )}
                                                 </div>
                                                 
                                                 <div className="grid gap-2">
@@ -610,7 +674,7 @@ const FacultyTab = () => {
                                                         value={formData.designation}
                                                         key={`desig-${formData.designation}`}
                                                     >
-                                                        <SelectTrigger className={formErrors.designation ? "border-red-500" : ""}>
+                                                        <SelectTrigger className={`${formErrors.designation ? "border-red-500 ring-red-200" : ""} transition-all duration-200`}>
                                                             <SelectValue placeholder="Select a designation" />
                                                         </SelectTrigger>
                                                         <SelectContent className='bg-white'>
@@ -621,7 +685,11 @@ const FacultyTab = () => {
                                                             ))}
                                                         </SelectContent>
                                                     </Select>
-                                                    {formErrors.designation && <p className="text-sm text-red-500">{formErrors.designation}</p>}
+                                                    {formErrors.designation && (
+                                                        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-sm text-red-500">
+                                                            {formErrors.designation}
+                                                        </motion.p>
+                                                    )}
                                                 </div>
                                                 
                                                 <div className="grid gap-2">
@@ -633,9 +701,13 @@ const FacultyTab = () => {
                                                         value={formData.joiningDate}
                                                         onChange={handleInputChange}
                                                         required
-                                                        className={formErrors.joiningDate ? "border-red-500" : ""}
+                                                        className={`${formErrors.joiningDate ? "border-red-500 ring-red-200" : ""} transition-all duration-200`}
                                                     />
-                                                    {formErrors.joiningDate && <p className="text-sm text-red-500">{formErrors.joiningDate}</p>}
+                                                    {formErrors.joiningDate && (
+                                                        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-sm text-red-500">
+                                                            {formErrors.joiningDate}
+                                                        </motion.p>
+                                                    )}
                                                 </div>
                                             </div>
                                         </TabsContent>
@@ -651,13 +723,24 @@ const FacultyTab = () => {
                                                 }
                                             }}
                                             disabled={submitting}
-                                            className="mt-3"
+                                            className="mt-3 transition-all duration-200"
                                         >
                                             Cancel
                                         </Button>
 
-                                        <Button className="bg-[#63144c] text-white mt-3 hover:bg-[#5f0a47] hover:text-white" onClick={handleAddFaculty} disabled={submitting}>
-                                            {submitting ? "Adding..." : "Add Faculty"}
+                                        <Button 
+                                            className="bg-[#63144c] text-white mt-3 hover:bg-[#5f0a47] hover:text-white transition-all duration-200 shadow-md" 
+                                            onClick={handleAddFaculty} 
+                                            disabled={submitting}
+                                        >
+                                            {submitting ? (
+                                                <>
+                                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                    Adding...
+                                                </>
+                                            ) : (
+                                                "Add Faculty"
+                                            )}
                                         </Button>
                                     </DialogFooter>
                                 </DialogContent>
@@ -667,13 +750,37 @@ const FacultyTab = () => {
                 </CardHeader>
                 <CardContent className="p-0">
                     {loading ? (
-                        <div className="flex justify-center items-center p-8">
-                            <div className="animate-spin h-8 w-8 border-4 border-blue-500 rounded-full border-t-transparent"></div>
+                        <div className="flex flex-col gap-4 p-6">
+                            <div className="flex items-center space-x-4">
+                                <Skeleton className="h-12 w-12 rounded-full" />
+                                <div className="space-y-2">
+                                    <Skeleton className="h-4 w-[250px]" />
+                                    <Skeleton className="h-4 w-[200px]" />
+                                </div>
+                            </div>
+                            {[1, 2, 3].map((i) => (
+                                <div key={i} className="flex items-center space-x-4">
+                                    <Skeleton className="h-12 w-12 rounded-full" />
+                                    <div className="space-y-2">
+                                        <Skeleton className="h-4 w-[250px]" />
+                                        <Skeleton className="h-4 w-[200px]" />
+                                    </div>
+                                </div>
+                            ))}
                         </div>
                     ) : error ? (
-                        <div className="p-6 text-center text-red-500">{error}</div>
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-6 text-center text-red-500">
+                            {error}
+                        </motion.div>
                     ) : faculties.length === 0 ? (
-                        <div className="p-6 text-center text-gray-500">No faculty members found. Add a faculty member to get started.</div>
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            className="p-12 text-center text-gray-500 flex flex-col items-center justify-center"
+                        >
+                            <Users className="h-16 w-16 text-gray-300 mb-4" />
+                            <p className="text-lg">No faculty members found. Add a faculty member to get started.</p>
+                        </motion.div>
                     ) : (
                         <div className="overflow-x-auto">
                             <Table>
@@ -688,49 +795,65 @@ const FacultyTab = () => {
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {faculties.map((faculty) => (
-                                        <TableRow key={faculty._id}>
-                                            <TableCell className="font-medium">{faculty.facultyId}</TableCell>
-                                            <TableCell>{`${faculty.firstName} ${faculty.lastName}`}</TableCell>
-                                            <TableCell>{faculty.email}</TableCell>
-                                            <TableCell>{faculty.departmentId ? faculty.departmentId.name : "N/A"}</TableCell>
-                                            <TableCell>{faculty.designation}</TableCell>
-                                            <TableCell className="text-right">
-                                                <div className="flex justify-end gap-2">
-                                                    <Button
-                                                        variant="outline"
-                                                        size="icon"
-                                                        onClick={() => openViewDialog(faculty)}
-                                                    >
-                                                        <Eye size={16} />
-                                                    </Button>
-                                                    <Button
-                                                        variant="outline"
-                                                        size="icon"
-                                                        onClick={() => openEditDialog(faculty)}
-                                                    >
-                                                        <Pencil size={16} />
-                                                    </Button>
-                                                    <Button
-                                                        variant="outline"
-                                                        size="icon"
-                                                        className="text-red-500 hover:text-red-700"
-                                                        onClick={() => openDeleteDialog(faculty)}
-                                                    >
-                                                        <Trash2 size={16} />
-                                                    </Button>
-                                                </div>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
+                                    <AnimatePresence>
+                                        {faculties.map((faculty, index) => (
+                                            <motion.tr
+                                                key={faculty._id}
+                                                custom={index}
+                                                initial="hidden"
+                                                animate="visible"
+                                                exit="exit"
+                                                variants={tableRowVariants}
+                                                className="border-b transition-colors hover:bg-gray-50/50"
+                                            >
+                                                <TableCell className="font-medium">{faculty.facultyId}</TableCell>
+                                                <TableCell>{`${faculty.firstName} ${faculty.lastName}`}</TableCell>
+                                                <TableCell>{faculty.email}</TableCell>
+                                                <TableCell>{faculty.departmentId ? faculty.departmentId.name : "N/A"}</TableCell>
+                                                <TableCell>
+                                                    <Badge variant="outline" className="bg-[#63144c]/10 text-[#63144c] border-[#63144c]/20">
+                                                        {faculty.designation}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell className="text-right">
+                                                    <div className="flex justify-end gap-2">
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 transition-colors"
+                                                            onClick={() => openViewDialog(faculty)}
+                                                        >
+                                                            <Eye size={16} />
+                                                        </Button>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="text-amber-500 hover:text-amber-700 hover:bg-amber-50 transition-colors"
+                                                            onClick={() => openEditDialog(faculty)}
+                                                        >
+                                                            <Pencil size={16} />
+                                                        </Button>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="text-red-500 hover:text-red-700 hover:bg-red-50 transition-colors"
+                                                            onClick={() => openDeleteDialog(faculty)}
+                                                        >
+                                                            <Trash2 size={16} />
+                                                        </Button>
+                                                    </div>
+                                                </TableCell>
+                                            </motion.tr>
+                                        ))}
+                                    </AnimatePresence>
                                 </TableBody>
                             </Table>
                         </div>
                     )}
                 </CardContent>
-                <CardFooter className="flex justify-between border-t p-4">
+                <CardFooter className="flex justify-between border-t p-4 bg-gray-50/50">
                     <div className="text-sm text-gray-500">Total: {faculties.length} faculty member(s)</div>
-                    <Button variant="outline" onClick={fetchFaculties}>
+                    <Button variant="outline" onClick={fetchFaculties} className="transition-all duration-200 hover:bg-gray-100">
                         Refresh
                     </Button>
                 </CardFooter>
@@ -746,7 +869,11 @@ const FacultyTab = () => {
                         <DialogTitle>Faculty Details</DialogTitle>
                     </DialogHeader>
                     {currentFaculty && (
-                        <div className="grid gap-4 py-4">
+                        <motion.div 
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="grid gap-4 py-4"
+                        >
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <h3 className="text-sm font-medium text-gray-500">Faculty ID</h3>
@@ -792,10 +919,10 @@ const FacultyTab = () => {
                                         : "No sections assigned"}
                                 </p>
                             </div>
-                        </div>
+                        </motion.div>
                     )}
                     <DialogFooter>
-                        <Button onClick={() => setIsViewDialogOpen(false)}>
+                        <Button onClick={() => setIsViewDialogOpen(false)} className="transition-all duration-200">
                             Close
                         </Button>
                     </DialogFooter>
@@ -818,9 +945,14 @@ const FacultyTab = () => {
                     </DialogHeader>
                     <DialogDescription>Make changes to the faculty information below.</DialogDescription>
                     {serverError && (
-                        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative" role="alert">
+                        <motion.div
+                            initial={{ opacity: 0, y: -10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative"
+                            role="alert"
+                        >
                             <span className="block sm:inline">{serverError}</span>
-                        </div>
+                        </motion.div>
                     )}
                     
                     <Tabs defaultValue="basic" className="w-full">
@@ -839,9 +971,13 @@ const FacultyTab = () => {
                                             name="firstName"
                                             value={formData.firstName}
                                             onChange={handleInputChange}
-                                            className={formErrors.firstName ? "border-red-500" : ""}
+                                            className={`${formErrors.firstName ? "border-red-500 ring-red-200" : ""} transition-all duration-200`}
                                         />
-                                        {formErrors.firstName && <p className="text-sm text-red-500">{formErrors.firstName}</p>}
+                                        {formErrors.firstName && (
+                                            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-sm text-red-500">
+                                                {formErrors.firstName}
+                                            </motion.p>
+                                        )}
                                     </div>
                                     <div className="grid gap-2">
                                         <Label htmlFor="edit-lastName">Last Name</Label>
@@ -850,9 +986,13 @@ const FacultyTab = () => {
                                             name="lastName"
                                             value={formData.lastName}
                                             onChange={handleInputChange}
-                                            className={formErrors.lastName ? "border-red-500" : ""}
+                                            className={`${formErrors.lastName ? "border-red-500 ring-red-200" : ""} transition-all duration-200`}
                                         />
-                                        {formErrors.lastName && <p className="text-sm text-red-500">{formErrors.lastName}</p>}
+                                        {formErrors.lastName && (
+                                            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-sm text-red-500">
+                                                {formErrors.lastName}
+                                            </motion.p>
+                                        )}
                                     </div>
                                 </div>
                                 
@@ -863,9 +1003,13 @@ const FacultyTab = () => {
                                         name="facultyId"
                                         value={formData.facultyId}
                                         onChange={handleInputChange}
-                                        className={formErrors.facultyId ? "border-red-500" : ""}
+                                        className={`${formErrors.facultyId ? "border-red-500 ring-red-200" : ""} transition-all duration-200`}
                                     />
-                                    {formErrors.facultyId && <p className="text-sm text-red-500">{formErrors.facultyId}</p>}
+                                    {formErrors.facultyId && (
+                                        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-sm text-red-500">
+                                            {formErrors.facultyId}
+                                        </motion.p>
+                                    )}
                                 </div>
                                 
                                 <div className="grid gap-2">
@@ -875,9 +1019,13 @@ const FacultyTab = () => {
                                         name="email"
                                         value={formData.email}
                                         onChange={handleInputChange}
-                                        className={formErrors.email ? "border-red-500" : ""}
+                                        className={`${formErrors.email ? "border-red-500 ring-red-200" : ""} transition-all duration-200`}
                                     />
-                                    {formErrors.email && <p className="text-sm text-red-500">{formErrors.email}</p>}
+                                    {formErrors.email && (
+                                        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-sm text-red-500">
+                                            {formErrors.email}
+                                        </motion.p>
+                                    )}
                                 </div>
                                 
                                 <div className="grid gap-2">
@@ -887,9 +1035,13 @@ const FacultyTab = () => {
                                         name="phone"
                                         value={formData.phone}
                                         onChange={handleInputChange}
-                                        className={formErrors.phone ? "border-red-500" : ""}
+                                        className={`${formErrors.phone ? "border-red-500 ring-red-200" : ""} transition-all duration-200`}
                                     />
-                                    {formErrors.phone && <p className="text-sm text-red-500">{formErrors.phone}</p>}
+                                    {formErrors.phone && (
+                                        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-sm text-red-500">
+                                            {formErrors.phone}
+                                        </motion.p>
+                                    )}
                                 </div>
                                 
                                 <div className="grid gap-2">
@@ -901,9 +1053,13 @@ const FacultyTab = () => {
                                         value={formData.password}
                                         onChange={handleInputChange}
                                         placeholder="Enter new password or leave blank"
-                                        className={formErrors.password ? "border-red-500" : ""}
+                                        className={`${formErrors.password ? "border-red-500 ring-red-200" : ""} transition-all duration-200`}
                                     />
-                                    {formErrors.password && <p className="text-sm text-red-500">{formErrors.password}</p>}
+                                    {formErrors.password && (
+                                        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-sm text-red-500">
+                                            {formErrors.password}
+                                        </motion.p>
+                                    )}
                                 </div>
                             </div>
                         </TabsContent>
@@ -917,7 +1073,7 @@ const FacultyTab = () => {
                                         value={formData.departmentId}
                                         key={`edit-dept-${formData.departmentId}`}
                                     >
-                                        <SelectTrigger className={formErrors.departmentId ? "border-red-500" : ""}>
+                                        <SelectTrigger className={`${formErrors.departmentId ? "border-red-500 ring-red-200" : ""} transition-all duration-200`}>
                                             <SelectValue placeholder="Select a department" />
                                         </SelectTrigger>
                                         <SelectContent className='bg-white'>
@@ -928,7 +1084,11 @@ const FacultyTab = () => {
                                             ))}
                                         </SelectContent>
                                     </Select>
-                                    {formErrors.departmentId && <p className="text-sm text-red-500">{formErrors.departmentId}</p>}
+                                    {formErrors.departmentId && (
+                                        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-sm text-red-500">
+                                            {formErrors.departmentId}
+                                        </motion.p>
+                                    )}
                                 </div>
                                 
                                 <div className="grid gap-2">
@@ -938,7 +1098,7 @@ const FacultyTab = () => {
                                         value={formData.designation}
                                         key={`edit-desig-${formData.designation}`}
                                     >
-                                        <SelectTrigger className={formErrors.designation ? "border-red-500" : ""}>
+                                        <SelectTrigger className={`${formErrors.designation ? "border-red-500 ring-red-200" : ""} transition-all duration-200`}>
                                             <SelectValue placeholder="Select a designation" />
                                         </SelectTrigger>
                                         <SelectContent className='bg-white'>
@@ -949,7 +1109,11 @@ const FacultyTab = () => {
                                             ))}
                                         </SelectContent>
                                     </Select>
-                                    {formErrors.designation && <p className="text-sm text-red-500">{formErrors.designation}</p>}
+                                    {formErrors.designation && (
+                                        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-sm text-red-500">
+                                            {formErrors.designation}
+                                        </motion.p>
+                                    )}
                                 </div>
                                 
                                 <div className="grid gap-2">
@@ -960,9 +1124,13 @@ const FacultyTab = () => {
                                         type="date"
                                         value={formData.joiningDate}
                                         onChange={handleInputChange}
-                                        className={formErrors.joiningDate ? "border-red-500" : ""}
+                                        className={`${formErrors.joiningDate ? "border-red-500 ring-red-200" : ""} transition-all duration-200`}
                                     />
-                                    {formErrors.joiningDate && <p className="text-sm text-red-500">{formErrors.joiningDate}</p>}
+                                    {formErrors.joiningDate && (
+                                        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-sm text-red-500">
+                                            {formErrors.joiningDate}
+                                        </motion.p>
+                                    )}
                                 </div>
                             </div>
                         </TabsContent>
@@ -978,11 +1146,23 @@ const FacultyTab = () => {
                                 }
                             }}
                             disabled={submitting}
+                            className="transition-all duration-200"
                         >
                             Cancel
                         </Button>
-                        <Button onClick={handleUpdateFaculty} disabled={submitting} className="bg-[#63144c] text-white hover:bg-[#6c0e51] hover:text-white">
-                            {submitting ? "Updating..." : "Update Faculty"}
+                        <Button 
+                            onClick={handleUpdateFaculty} 
+                            disabled={submitting} 
+                            className="bg-[#63144c] text-white hover:bg-[#6c0e51] hover:text-white transition-all duration-200 shadow-md"
+                        >
+                            {submitting ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Updating...
+                                </>
+                            ) : (
+                                "Update Faculty"
+                            )}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
@@ -1003,20 +1183,28 @@ const FacultyTab = () => {
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel disabled={submitting}>Cancel</AlertDialogCancel>
+                        <AlertDialogCancel disabled={submitting} className="transition-all duration-200">
+                            Cancel
+                        </AlertDialogCancel>
                         <AlertDialogAction
                             onClick={handleDeleteFaculty}
-                            className="bg-red-500 hover:bg-red-600 text-white"
+                            className="bg-red-500 hover:bg-red-600 text-white transition-all duration-200 shadow-md"
                             disabled={submitting}
                         >
-                            {submitting ? "Deleting..." : "Delete"}
+                            {submitting ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Deleting...
+                                </>
+                            ) : (
+                                "Delete"
+                            )}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
-        </div>
+        </motion.div>
     )
 }
 
 export default FacultyTab
-

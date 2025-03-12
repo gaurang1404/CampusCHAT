@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import axios from "axios"
+import { motion, AnimatePresence } from "framer-motion"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -29,7 +30,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toast } from "sonner"
-import { Pencil, Trash2, Plus, Filter } from "lucide-react"
+import { Pencil, Trash2, Plus, Filter, BookOpen, Loader2, Search, List, Grid, ChevronRight } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -39,8 +40,46 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { Badge } from "@/components/ui/badge"
+import { Skeleton } from "@/components/ui/skeleton"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 const apiUrl = import.meta.env.VITE_API_URL
+
+// Animation variants
+const fadeIn = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { duration: 0.4 } },
+  exit: { opacity: 0, transition: { duration: 0.2 } },
+}
+
+const tableRowVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: (i) => ({
+    opacity: 1,
+    y: 0,
+    transition: {
+      delay: i * 0.05,
+      duration: 0.3,
+      ease: "easeOut",
+    },
+  }),
+  exit: { opacity: 0, transition: { duration: 0.2 } },
+}
+
+const cardVariants = {
+  hidden: { opacity: 0, scale: 0.95 },
+  visible: (i) => ({
+    opacity: 1,
+    scale: 1,
+    transition: {
+      delay: i * 0.05,
+      duration: 0.3,
+      ease: "easeOut",
+    },
+  }),
+  exit: { opacity: 0, scale: 0.95, transition: { duration: 0.2 } },
+}
 
 const CoursesTab = () => {
   const [courses, setCourses] = useState([])
@@ -56,6 +95,9 @@ const CoursesTab = () => {
   const [submitting, setSubmitting] = useState(false)
   const [filterDepartment, setFilterDepartment] = useState("all")
   const [filterStatus, setFilterStatus] = useState("all")
+  const [searchQuery, setSearchQuery] = useState("")
+  const [viewMode, setViewMode] = useState("list") // "list" or "grid"
+  const [expandedDepartment, setExpandedDepartment] = useState(null)
   const [formData, setFormData] = useState({
     courseCode: "",
     name: "",
@@ -74,7 +116,7 @@ const CoursesTab = () => {
   // Fetch courses with filter
   useEffect(() => {
     fetchCourses()
-  }, [filterDepartment, filterStatus])
+  }, [filterDepartment, filterStatus, searchQuery])
 
   const fetchDepartments = async () => {
     try {
@@ -128,6 +170,17 @@ const CoursesTab = () => {
       if (filterDepartment !== "all") {
         coursesData = coursesData.filter(
           (course) => course.departmentId && course.departmentId._id === filterDepartment,
+        )
+      }
+
+      // Apply search filter if present
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase()
+        coursesData = coursesData.filter(
+          (course) =>
+            course.name.toLowerCase().includes(query) ||
+            course.courseCode.toLowerCase().includes(query) ||
+            (course.departmentId && course.departmentId.name.toLowerCase().includes(query)),
         )
       }
 
@@ -340,7 +393,6 @@ const CoursesTab = () => {
           Authorization: `Bearer ${token}`,
         },
       }
-      console.log(courseId)
 
       const response = await axios.patch(`${apiUrl}/api/course/${courseId}/status`, { status: newStatus }, config)
 
@@ -389,39 +441,163 @@ const CoursesTab = () => {
     setIsDeleteDialogOpen(true)
   }
 
+  const handleSearch = (e) => {
+    setSearchQuery(e.target.value)
+    // Debounce search to avoid too many re-renders
+    const timeoutId = setTimeout(() => {
+      fetchCourses()
+    }, 300)
+    return () => clearTimeout(timeoutId)
+  }
+
+  // Get status badge styling
+  const getStatusBadgeClass = (status) => {
+    switch (status) {
+      case "Open":
+        return "bg-green-100 text-green-800 border-green-200"
+      case "Closed":
+        return "bg-red-100 text-red-800 border-red-200"
+      case "Waitlisted":
+        return "bg-yellow-100 text-yellow-800 border-yellow-200"
+      default:
+        return "bg-gray-100 text-gray-800 border-gray-200"
+    }
+  }
+
+  // Group courses by department for grid view
+  const getCoursesByDepartment = () => {
+    const grouped = {}
+
+    // Initialize with all departments (even empty ones)
+    departments.forEach((dept) => {
+      grouped[dept._id] = {
+        department: dept,
+        courses: [],
+      }
+    })
+
+    // Add courses to their departments
+    courses.forEach((course) => {
+      if (course.departmentId) {
+        const deptId = course.departmentId._id
+        if (grouped[deptId]) {
+          grouped[deptId].courses.push(course)
+        } else {
+          // In case there's a course with a department not in our list
+          grouped[deptId] = {
+            department: course.departmentId,
+            courses: [course],
+          }
+        }
+      }
+    })
+
+    // Convert to array and sort
+    return Object.values(grouped).sort((a, b) => a.department.name.localeCompare(b.department.name))
+  }
+
+  const toggleDepartmentExpansion = (deptId) => {
+    if (expandedDepartment === deptId) {
+      setExpandedDepartment(null)
+    } else {
+      setExpandedDepartment(deptId)
+    }
+  }
+
+  // Truncate description for grid view
+  const truncateDescription = (text, maxLength = 100) => {
+    if (!text) return ""
+    if (text.length <= maxLength) return text
+    return text.substring(0, maxLength) + "..."
+  }
+
   return (
-    <div className="p-6 mx-auto">
-      <Card className="max-w-[1200px] border-none">
-        <CardHeader className="bg-[#63144c] text-white">
-          <div className="flex justify-between items-center">
-            <CardTitle className="text-2xl font-bold">Course Management</CardTitle>
-            <div className="flex gap-2">
+    <motion.div className="p-6 mx-auto" initial="hidden" animate="visible" variants={fadeIn}>
+      <Card className="max-w-[1200px] border shadow-lg overflow-hidden">
+        <CardHeader className="bg-gradient-to-r from-[#63144c] to-[#8a1a68] text-white">
+          <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+            <CardTitle className="text-2xl font-bold flex items-center">
+              <BookOpen className="mr-2 h-6 w-6" />
+              Course Management
+            </CardTitle>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <div className="relative w-full md:w-64">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-white opacity-70" />
+                <Input
+                  placeholder="Search courses..."
+                  className="pl-8 bg-white/10 border-white/20 text-white placeholder:text-white/70 w-full"
+                  value={searchQuery}
+                  onChange={handleSearch}
+                />
+              </div>
+
+              {/* View Mode Toggle */}
+              <Tabs value={viewMode} onValueChange={setViewMode} className="w-auto">
+                <TabsList className="bg-white/10 border-white/20">
+                  <TabsTrigger
+                    value="list"
+                    className="data-[state=active]:bg-white data-[state=active]:text-[#63144c] text-white"
+                  >
+                    <List className="h-4 w-4 mr-2" />
+                    List
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="grid"
+                    className="data-[state=active]:bg-white data-[state=active]:text-[#63144c] text-white"
+                  >
+                    <Grid className="h-4 w-4 mr-2" />
+                    Grid
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="bg-white text-[#63144c] hover:bg-gray-100 hover:text-black">
+                  <Button
+                    variant="outline"
+                    className="bg-white text-[#63144c] hover:bg-gray-100 hover:text-[#63144c] transition-colors duration-300 shadow-md"
+                  >
                     <Filter size={16} className="md:mr-2" />
                     <span className="hidden md:block">Filter</span>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56 bg-white">
-                  <DropdownMenuLabel>Filter by Department</DropdownMenuLabel>
+                <DropdownMenuContent className="w-56 bg-white shadow-lg border-none">
+                  <DropdownMenuLabel>Filter Options</DropdownMenuLabel>
                   <DropdownMenuSeparator />
+
+                  <DropdownMenuLabel className="text-xs font-normal text-muted-foreground pt-2">
+                    Department
+                  </DropdownMenuLabel>
                   <DropdownMenuRadioGroup value={filterDepartment} onValueChange={setFilterDepartment}>
-                    <DropdownMenuRadioItem value="all">All Departments</DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="all" className="cursor-pointer transition-colors">
+                      All Departments
+                    </DropdownMenuRadioItem>
                     {departments.map((department) => (
-                      <DropdownMenuRadioItem key={department._id} value={department._id}>
+                      <DropdownMenuRadioItem
+                        key={department._id}
+                        value={department._id}
+                        className="cursor-pointer transition-colors"
+                      >
                         {department.name}
                       </DropdownMenuRadioItem>
                     ))}
                   </DropdownMenuRadioGroup>
+
                   <DropdownMenuSeparator />
-                  <DropdownMenuLabel>Filter by Status</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
+                  <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">Status</DropdownMenuLabel>
                   <DropdownMenuRadioGroup value={filterStatus} onValueChange={setFilterStatus}>
-                    <DropdownMenuRadioItem value="all">All Statuses</DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="Open">Open</DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="Closed">Closed</DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="Waitlisted">Waitlisted</DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="all" className="cursor-pointer transition-colors">
+                      All Statuses
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="Open" className="cursor-pointer transition-colors">
+                      Open
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="Closed" className="cursor-pointer transition-colors">
+                      Closed
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="Waitlisted" className="cursor-pointer transition-colors">
+                      Waitlisted
+                    </DropdownMenuRadioItem>
                   </DropdownMenuRadioGroup>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -434,9 +610,10 @@ const CoursesTab = () => {
                 }}
               >
                 <DialogTrigger asChild>
-                  <Button className="flex items-center gap-2">
+                  <Button className="flex items-center gap-2 transition-colors duration-300 shadow-md">
                     <Plus size={16} />
                     <span className="hidden md:block">Add Course</span>
+                    <span className="md:hidden">Add</span>
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-lg bg-white">
@@ -445,12 +622,14 @@ const CoursesTab = () => {
                   </DialogHeader>
                   <DialogDescription>Fill in the details to create a new course.</DialogDescription>
                   {serverError && (
-                    <div
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
                       className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative"
                       role="alert"
                     >
                       <span className="block sm:inline">{serverError}</span>
-                    </div>
+                    </motion.div>
                   )}
                   <div className="grid gap-4 py-4">
                     <div className="grid grid-cols-2 gap-4">
@@ -463,9 +642,13 @@ const CoursesTab = () => {
                           onChange={handleInputChange}
                           required
                           placeholder="E.g., CS101"
-                          className={formErrors.courseCode ? "border-red-500" : ""}
+                          className={`${formErrors.courseCode ? "border-red-500 ring-red-200" : ""} transition-all duration-200`}
                         />
-                        {formErrors.courseCode && <p className="text-sm text-red-500">{formErrors.courseCode}</p>}
+                        {formErrors.courseCode && (
+                          <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-sm text-red-500">
+                            {formErrors.courseCode}
+                          </motion.p>
+                        )}
                       </div>
                       <div className="grid gap-2">
                         <Label htmlFor="credits">Credits</Label>
@@ -477,9 +660,13 @@ const CoursesTab = () => {
                           max="6"
                           value={formData.credits}
                           onChange={handleNumberChange}
-                          className={formErrors.credits ? "border-red-500" : ""}
+                          className={`${formErrors.credits ? "border-red-500 ring-red-200" : ""} transition-all duration-200`}
                         />
-                        {formErrors.credits && <p className="text-sm text-red-500">{formErrors.credits}</p>}
+                        {formErrors.credits && (
+                          <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-sm text-red-500">
+                            {formErrors.credits}
+                          </motion.p>
+                        )}
                       </div>
                     </div>
                     <div className="grid gap-2">
@@ -491,9 +678,13 @@ const CoursesTab = () => {
                         onChange={handleInputChange}
                         required
                         placeholder="Enter course name"
-                        className={formErrors.name ? "border-red-500" : ""}
+                        className={`${formErrors.name ? "border-red-500 ring-red-200" : ""} transition-all duration-200`}
                       />
-                      {formErrors.name && <p className="text-sm text-red-500">{formErrors.name}</p>}
+                      {formErrors.name && (
+                        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-sm text-red-500">
+                          {formErrors.name}
+                        </motion.p>
+                      )}
                     </div>
                     <div className="grid gap-2">
                       <Label htmlFor="departmentId">Department</Label>
@@ -502,7 +693,9 @@ const CoursesTab = () => {
                         value={formData.departmentId}
                         key={formData.departmentId}
                       >
-                        <SelectTrigger className={formErrors.departmentId ? "border-red-500" : ""}>
+                        <SelectTrigger
+                          className={`${formErrors.departmentId ? "border-red-500 ring-red-200" : ""} transition-all duration-200`}
+                        >
                           <SelectValue placeholder="Select a department" />
                         </SelectTrigger>
                         <SelectContent className="bg-white">
@@ -513,7 +706,11 @@ const CoursesTab = () => {
                           ))}
                         </SelectContent>
                       </Select>
-                      {formErrors.departmentId && <p className="text-sm text-red-500">{formErrors.departmentId}</p>}
+                      {formErrors.departmentId && (
+                        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-sm text-red-500">
+                          {formErrors.departmentId}
+                        </motion.p>
+                      )}
                     </div>
                     <div className="grid gap-2">
                       <Label htmlFor="status">Status</Label>
@@ -536,10 +733,14 @@ const CoursesTab = () => {
                         value={formData.description}
                         onChange={handleInputChange}
                         placeholder="Enter course description"
-                        className={formErrors.description ? "border-red-500" : ""}
+                        className={`${formErrors.description ? "border-red-500 ring-red-200" : ""} transition-all duration-200`}
                         rows={4}
                       />
-                      {formErrors.description && <p className="text-sm text-red-500">{formErrors.description}</p>}
+                      {formErrors.description && (
+                        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-sm text-red-500">
+                          {formErrors.description}
+                        </motion.p>
+                      )}
                       <p className="text-xs text-gray-500">{formData.description.length}/2000 characters</p>
                     </div>
                   </div>
@@ -553,17 +754,24 @@ const CoursesTab = () => {
                         }
                       }}
                       disabled={submitting}
-                      className="mt-3"
+                      className="mt-3 transition-all duration-200"
                     >
                       Cancel
                     </Button>
 
                     <Button
-                      className="bg-[#63144c] text-white mt-3 hover:bg-[#5f0a47] hover:text-white"
+                      className="bg-[#63144c] text-white mt-3 hover:bg-[#5f0a47] hover:text-white transition-all duration-200 shadow-md"
                       onClick={handleAddCourse}
                       disabled={submitting}
                     >
-                      {submitting ? "Adding..." : "Add Course"}
+                      {submitting ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Adding...
+                        </>
+                      ) : (
+                        "Add Course"
+                      )}
                     </Button>
                   </DialogFooter>
                 </DialogContent>
@@ -573,14 +781,39 @@ const CoursesTab = () => {
         </CardHeader>
         <CardContent className="p-0">
           {loading ? (
-            <div className="flex justify-center items-center p-8">
-              <div className="animate-spin h-8 w-8 border-4 border-blue-500 rounded-full border-t-transparent"></div>
+            <div className="flex flex-col gap-4 p-6">
+              <div className="flex items-center space-x-4">
+                <Skeleton className="h-12 w-12 rounded-full" />
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-[250px]" />
+                  <Skeleton className="h-4 w-[200px]" />
+                </div>
+              </div>
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="flex items-center space-x-4">
+                  <Skeleton className="h-12 w-12 rounded-full" />
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-[250px]" />
+                    <Skeleton className="h-4 w-[200px]" />
+                  </div>
+                </div>
+              ))}
             </div>
           ) : error ? (
-            <div className="p-6 text-center text-red-500">{error}</div>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-6 text-center text-red-500">
+              {error}
+            </motion.div>
           ) : courses.length === 0 ? (
-            <div className="p-6 text-center text-gray-500">No courses found. Add a course to get started.</div>
-          ) : (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="p-12 text-center text-gray-500 flex flex-col items-center justify-center"
+            >
+              <BookOpen className="h-16 w-16 text-gray-300 mb-4" />
+              <p className="text-lg">No courses found. Add a course to get started.</p>
+            </motion.div>
+          ) : viewMode === "list" ? (
+            // List View
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
@@ -594,81 +827,234 @@ const CoursesTab = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {courses.map((course) => (
-                    <TableRow key={course._id}>
-                      <TableCell className="font-medium">{course.courseCode}</TableCell>
-                      <TableCell>{course.name}</TableCell>
-                      <TableCell>{course.departmentId.name}</TableCell>
-                      <TableCell>{course.credits}</TableCell>
-                      <TableCell>
-                        <div
-                          className={`px-2 py-1 rounded-full text-xs font-medium inline-block ${
-                            course.status === "Open"
-                              ? "bg-green-100 text-green-800"
-                              : course.status === "Closed"
-                                ? "bg-red-100 text-red-800"
-                                : "bg-yellow-100 text-yellow-800"
-                          }`}
-                        >
-                          {course.status || "Open"}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="outline" size="sm">
-                                Status
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent className="bg-white">
-                              <DropdownMenuLabel>Change Status</DropdownMenuLabel>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuRadioGroup value={course.status || "Open"}>
-                                <DropdownMenuRadioItem
-                                  value="Open"
-                                  onClick={() => handleUpdateStatus(course._id, "Open")}
-                                >
-                                  Open
-                                </DropdownMenuRadioItem>
-                                <DropdownMenuRadioItem
-                                  value="Closed"
-                                  onClick={() => handleUpdateStatus(course._id, "Closed")}
-                                >
-                                  Closed
-                                </DropdownMenuRadioItem>
-                                <DropdownMenuRadioItem
-                                  value="Waitlisted"
-                                  onClick={() => handleUpdateStatus(course._id, "Waitlisted")}
-                                >
-                                  Waitlisted
-                                </DropdownMenuRadioItem>
-                              </DropdownMenuRadioGroup>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                          <Button variant="outline" size="icon" onClick={() => openEditDialog(course)}>
-                            <Pencil size={16} />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="text-red-500 hover:text-red-700"
-                            onClick={() => openDeleteDialog(course)}
-                          >
-                            <Trash2 size={16} />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  <AnimatePresence>
+                    {courses.map((course, index) => (
+                      <motion.tr
+                        key={course._id}
+                        custom={index}
+                        initial="hidden"
+                        animate="visible"
+                        exit="exit"
+                        variants={tableRowVariants}
+                        className="border-b transition-colors hover:bg-gray-50/50"
+                      >
+                        <TableCell className="font-medium">{course.courseCode}</TableCell>
+                        <TableCell>{course.name}</TableCell>
+                        <TableCell>{course.departmentId.name}</TableCell>
+                        <TableCell>{course.credits}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className={getStatusBadgeClass(course.status || "Open")}>
+                            {course.status || "Open"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm" className="transition-colors">
+                                  Status
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent className="bg-white">
+                                <DropdownMenuLabel>Change Status</DropdownMenuLabel>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuRadioGroup value={course.status || "Open"}>
+                                  <DropdownMenuRadioItem
+                                    value="Open"
+                                    onClick={() => handleUpdateStatus(course._id, "Open")}
+                                    className="cursor-pointer transition-colors"
+                                  >
+                                    Open
+                                  </DropdownMenuRadioItem>
+                                  <DropdownMenuRadioItem
+                                    value="Closed"
+                                    onClick={() => handleUpdateStatus(course._id, "Closed")}
+                                    className="cursor-pointer transition-colors"
+                                  >
+                                    Closed
+                                  </DropdownMenuRadioItem>
+                                  <DropdownMenuRadioItem
+                                    value="Waitlisted"
+                                    onClick={() => handleUpdateStatus(course._id, "Waitlisted")}
+                                    className="cursor-pointer transition-colors"
+                                  >
+                                    Waitlisted
+                                  </DropdownMenuRadioItem>
+                                </DropdownMenuRadioGroup>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="text-amber-500 hover:text-amber-700 hover:bg-amber-50 transition-colors"
+                              onClick={() => openEditDialog(course)}
+                            >
+                              <Pencil size={16} />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="text-red-500 hover:text-red-700 hover:bg-red-50 transition-colors"
+                              onClick={() => openDeleteDialog(course)}
+                            >
+                              <Trash2 size={16} />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </motion.tr>
+                    ))}
+                  </AnimatePresence>
                 </TableBody>
               </Table>
             </div>
+          ) : (
+            // Grid View - Grouped by Department
+            <div className="p-4">
+              <AnimatePresence>
+                {getCoursesByDepartment().map((group, groupIndex) => (
+                  <motion.div
+                    key={group.department._id}
+                    custom={groupIndex}
+                    initial="hidden"
+                    animate="visible"
+                    exit="exit"
+                    variants={cardVariants}
+                    className="mb-6"
+                  >
+                    <Card className="border shadow-sm overflow-hidden">
+                      <CardHeader
+                        className="bg-gradient-to-r from-[#63144c]/5 to-[#8a1a68]/5 p-4 cursor-pointer"
+                        onClick={() => toggleDepartmentExpansion(group.department._id)}
+                      >
+                        <div className="flex justify-between items-center">
+                          <CardTitle className="text-lg font-medium flex items-center">
+                            <BookOpen className="mr-2 h-5 w-5 text-[#63144c]" />
+                            {group.department.name}
+                            <Badge className="ml-3 bg-[#63144c]/10 text-[#63144c] hover:bg-[#63144c]/20 border-[#63144c]/20">
+                              {group.courses.length} {group.courses.length === 1 ? "course" : "courses"}
+                            </Badge>
+                          </CardTitle>
+                          <ChevronRight
+                            className={`h-5 w-5 text-[#63144c] transition-transform duration-200 ${
+                              expandedDepartment === group.department._id ? "rotate-90" : ""
+                            }`}
+                          />
+                        </div>
+                      </CardHeader>
+
+                      {expandedDepartment === group.department._id && (
+                        <CardContent className="p-4">
+                          {group.courses.length === 0 ? (
+                            <div className="text-center text-gray-500 py-4">No courses found for this department</div>
+                          ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                              <AnimatePresence>
+                                {group.courses.map((course, courseIndex) => (
+                                  <motion.div
+                                    key={course._id}
+                                    custom={courseIndex}
+                                    initial="hidden"
+                                    animate="visible"
+                                    exit="exit"
+                                    variants={cardVariants}
+                                  >
+                                    <Card className="border shadow-sm hover:shadow-md transition-shadow duration-200">
+                                      <CardContent className="p-4">
+                                        <div className="flex justify-between items-start mb-2">
+                                          <div className="font-medium text-lg">{course.name}</div>
+                                          <Badge
+                                            variant="outline"
+                                            className={getStatusBadgeClass(course.status || "Open")}
+                                          >
+                                            {course.status || "Open"}
+                                          </Badge>
+                                        </div>
+                                        <div className="flex items-center gap-2 mb-3">
+                                          <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                                            {course.courseCode}
+                                          </Badge>
+                                          <Badge variant="secondary" className="bg-purple-100 text-purple-800">
+                                            {course.credits} {course.credits === 1 ? "credit" : "credits"}
+                                          </Badge>
+                                        </div>
+                                        {course.description && (
+                                          <div className="text-sm text-gray-600 mb-3">
+                                            {truncateDescription(course.description)}
+                                          </div>
+                                        )}
+                                        <div className="flex justify-end gap-2 mt-2">
+                                          <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                              <Button variant="ghost" size="sm" className="transition-colors">
+                                                Status
+                                              </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent className="bg-white">
+                                              <DropdownMenuLabel>Change Status</DropdownMenuLabel>
+                                              <DropdownMenuSeparator />
+                                              <DropdownMenuRadioGroup value={course.status || "Open"}>
+                                                <DropdownMenuRadioItem
+                                                  value="Open"
+                                                  onClick={() => handleUpdateStatus(course._id, "Open")}
+                                                  className="cursor-pointer transition-colors"
+                                                >
+                                                  Open
+                                                </DropdownMenuRadioItem>
+                                                <DropdownMenuRadioItem
+                                                  value="Closed"
+                                                  onClick={() => handleUpdateStatus(course._id, "Closed")}
+                                                  className="cursor-pointer transition-colors"
+                                                >
+                                                  Closed
+                                                </DropdownMenuRadioItem>
+                                                <DropdownMenuRadioItem
+                                                  value="Waitlisted"
+                                                  onClick={() => handleUpdateStatus(course._id, "Waitlisted")}
+                                                  className="cursor-pointer transition-colors"
+                                                >
+                                                  Waitlisted
+                                                </DropdownMenuRadioItem>
+                                              </DropdownMenuRadioGroup>
+                                            </DropdownMenuContent>
+                                          </DropdownMenu>
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="text-amber-500 hover:text-amber-700 hover:bg-amber-50 transition-colors"
+                                            onClick={() => openEditDialog(course)}
+                                          >
+                                            <Pencil size={14} className="mr-1" />
+                                            Edit
+                                          </Button>
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="text-red-500 hover:text-red-700 hover:bg-red-50 transition-colors"
+                                            onClick={() => openDeleteDialog(course)}
+                                          >
+                                            <Trash2 size={14} className="mr-1" />
+                                            Delete
+                                          </Button>
+                                        </div>
+                                      </CardContent>
+                                    </Card>
+                                  </motion.div>
+                                ))}
+                              </AnimatePresence>
+                            </div>
+                          )}
+                        </CardContent>
+                      )}
+                    </Card>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
           )}
         </CardContent>
-        <CardFooter className="flex justify-between border-t p-4">
+        <CardFooter className="flex justify-between border-t p-4 bg-gray-50/50">
           <div className="text-sm text-gray-500">Total: {courses.length} course(s)</div>
-          <Button variant="outline" onClick={fetchCourses}>
+          <Button variant="outline" onClick={fetchCourses} className="transition-all duration-200 hover:bg-gray-100">
             Refresh
           </Button>
         </CardFooter>
@@ -690,9 +1076,14 @@ const CoursesTab = () => {
           </DialogHeader>
           <DialogDescription>Make changes to the course information below.</DialogDescription>
           {serverError && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative" role="alert">
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative"
+              role="alert"
+            >
               <span className="block sm:inline">{serverError}</span>
-            </div>
+            </motion.div>
           )}
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-2 gap-4">
@@ -703,9 +1094,13 @@ const CoursesTab = () => {
                   name="courseCode"
                   value={formData.courseCode}
                   onChange={handleInputChange}
-                  className={formErrors.courseCode ? "border-red-500" : ""}
+                  className={`${formErrors.courseCode ? "border-red-500 ring-red-200" : ""} transition-all duration-200`}
                 />
-                {formErrors.courseCode && <p className="text-sm text-red-500">{formErrors.courseCode}</p>}
+                {formErrors.courseCode && (
+                  <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-sm text-red-500">
+                    {formErrors.courseCode}
+                  </motion.p>
+                )}
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="edit-credits">Credits</Label>
@@ -717,9 +1112,13 @@ const CoursesTab = () => {
                   max="6"
                   value={formData.credits}
                   onChange={handleNumberChange}
-                  className={formErrors.credits ? "border-red-500" : ""}
+                  className={`${formErrors.credits ? "border-red-500 ring-red-200" : ""} transition-all duration-200`}
                 />
-                {formErrors.credits && <p className="text-sm text-red-500">{formErrors.credits}</p>}
+                {formErrors.credits && (
+                  <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-sm text-red-500">
+                    {formErrors.credits}
+                  </motion.p>
+                )}
               </div>
             </div>
             <div className="grid gap-2">
@@ -729,9 +1128,13 @@ const CoursesTab = () => {
                 name="name"
                 value={formData.name}
                 onChange={handleInputChange}
-                className={formErrors.name ? "border-red-500" : ""}
+                className={`${formErrors.name ? "border-red-500 ring-red-200" : ""} transition-all duration-200`}
               />
-              {formErrors.name && <p className="text-sm text-red-500">{formErrors.name}</p>}
+              {formErrors.name && (
+                <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-sm text-red-500">
+                  {formErrors.name}
+                </motion.p>
+              )}
             </div>
             <div className="grid gap-2">
               <Label htmlFor="edit-departmentId">Department</Label>
@@ -740,7 +1143,9 @@ const CoursesTab = () => {
                 value={formData.departmentId}
                 key={formData.departmentId}
               >
-                <SelectTrigger className={formErrors.departmentId ? "border-red-500" : ""}>
+                <SelectTrigger
+                  className={`${formErrors.departmentId ? "border-red-500 ring-red-200" : ""} transition-all duration-200`}
+                >
                   <SelectValue placeholder="Select a department" />
                 </SelectTrigger>
                 <SelectContent className="bg-white">
@@ -751,7 +1156,11 @@ const CoursesTab = () => {
                   ))}
                 </SelectContent>
               </Select>
-              {formErrors.departmentId && <p className="text-sm text-red-500">{formErrors.departmentId}</p>}
+              {formErrors.departmentId && (
+                <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-sm text-red-500">
+                  {formErrors.departmentId}
+                </motion.p>
+              )}
             </div>
             <div className="grid gap-2">
               <Label htmlFor="edit-status">Status</Label>
@@ -773,10 +1182,14 @@ const CoursesTab = () => {
                 name="description"
                 value={formData.description}
                 onChange={handleInputChange}
-                className={formErrors.description ? "border-red-500" : ""}
+                className={`${formErrors.description ? "border-red-500 ring-red-200" : ""} transition-all duration-200`}
                 rows={4}
               />
-              {formErrors.description && <p className="text-sm text-red-500">{formErrors.description}</p>}
+              {formErrors.description && (
+                <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-sm text-red-500">
+                  {formErrors.description}
+                </motion.p>
+              )}
               <p className="text-xs text-gray-500">{formData.description.length}/2000 characters</p>
             </div>
           </div>
@@ -790,15 +1203,23 @@ const CoursesTab = () => {
                 }
               }}
               disabled={submitting}
+              className="transition-all duration-200"
             >
               Cancel
             </Button>
             <Button
               onClick={handleUpdateCourse}
               disabled={submitting}
-              className="bg-[#63144c] text-white hover:bg-[#6c0e51] hover:text-white"
+              className="bg-[#63144c] text-white hover:bg-[#6c0e51] hover:text-white transition-all duration-200 shadow-md"
             >
-              {submitting ? "Updating..." : "Update Course"}
+              {submitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Updating...
+                </>
+              ) : (
+                "Update Course"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -819,18 +1240,27 @@ const CoursesTab = () => {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={submitting}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={submitting} className="transition-all duration-200">
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteCourse}
-              className="bg-red-500 hover:bg-red-600 text-white"
+              className="bg-red-500 hover:bg-red-600 text-white transition-all duration-200 shadow-md"
               disabled={submitting}
             >
-              {submitting ? "Deleting..." : "Delete"}
+              {submitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                "Delete"
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </motion.div>
   )
 }
 

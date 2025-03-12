@@ -230,7 +230,13 @@ export const NavBar = () => {
                                 <div className="flex flex-col gap-2">
                                     <span className="bg-[#63144c] p-1 rounded-[10px] text-center">{user.firstName + " " + user.lastName}</span>
 
-                                    <span className="bg-[#63144c] text-sm text-center p-1 rounded-[10px]">{(user.institutionName.length > 15) ? user.institutionName.substring(0, 12) + "..." : user.institutionName}</span>
+                                    <span className="bg-[#63144c] text-sm text-center p-1 rounded-[10px]">
+                                        {
+                                            (user.email.includes("admin")) ?
+                                        (user.institutionName.length > 15) ? user.institutionName.substring(0, 12) + "..." : user.institutionName : 
+                                        (user.departmentId.length > 15) ? user.departmentId.substring(0, 12) + "..." : user.departmentId
+                                        }
+                                    </span>
                                 </div>
                             </div>
                             <nav className="   bg-[#63144c] w-full m-auto rounded-b-2xl pt-6 text-center pb-6">

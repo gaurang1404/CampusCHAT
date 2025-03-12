@@ -158,7 +158,7 @@ export const RegistrationComponent = () => {
                     whileHover={primaryButtonHover}
                     whileTap={{ scale: 0.98 }}
                     className="text-xl px-8 py-4 bg-[#63144c] text-white font-bold rounded-md shadow-lg"
-                    onClick={() => navigate("/admin-dashboard")}
+                    onClick={() => navigate("/faculty-dashboard")}
                   >
                     Go to Dashboard
                   </motion.button>
@@ -215,7 +215,7 @@ export const RegistrationComponent = () => {
                 whileHover={primaryButtonHover}
                 whileTap={{ scale: 0.98 }}
                 className="text-2xl lg:text-4xl w-[90%] m-auto sm:m-5 sm:w-[48%] p-10 flex justify-center items-center text-white bg-[#63144c] font-extrabold shadow-2xl cursor-pointer"
-                onClick={() => navigate("/faculty-register")}
+                onClick={() => navigate("/faculty-login")}
               >
                 Faculty
               </motion.div>

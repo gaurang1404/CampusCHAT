@@ -1,8 +1,10 @@
-import { Faculty } from "../models/faculty.model.js";
 import { Department } from "../models/department.model.js";
-import { Admin } from "../models/admin.model.js";
+import { Semester } from "../models/semester.model.js";
+import { Section } from "../models/section.model.js"; 
+import { Faculty } from "../models/faculty.model.js";
 import winston from "winston";
 import bcrypt from "bcrypt";
+import jwt from 'jsonwebtoken';
 
 // Logger setup
 const logger = winston.createLogger({
@@ -204,6 +206,68 @@ export const loginFaculty = async (req, res) => {
   }
 };
 
+export const getFacultySections = async (req, res) => {
+  try {
+    const facultyId = req.params.id;
+
+    if (!facultyId) {
+      return res.status(400).json({
+        message: "Faculty ID is required",
+        data: [],
+        code: 400,
+      });
+    }
+
+    // Find sections where the faculty is assigned
+    const sections = await Section.find({ "courseFacultyMappings.facultyId": facultyId })
+      .populate("semesterId", "name") // Populating semester details
+      .populate("students", "firstName lastName") // Populating student names
+      .populate("courseFacultyMappings.courseId", "name"); // Populating course names
+
+    return res.status(200).json({
+      message: "Sections retrieved successfully",
+      data: { sections },
+      code: 200,
+    });
+  } catch (error) {
+    console.error(`Error fetching faculty sections: ${error.message}`);
+    return res.status(500).json({
+      message: "Internal Server Error",
+      data: [],
+      code: 500,
+    });
+  }
+};
+
+export const getFacultySemesters = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        // Find sections where the faculty teaches
+        const sections = await Section.find({
+            "courseFacultyMappings.facultyId": id
+        }).populate("semesterId");
+
+        // Extract unique semesters
+        const semesterIds = [...new Set(sections.map(section => section.semesterId?._id.toString()))];
+
+        // Find semester details
+        const semesters = await Semester.find({ _id: { $in: semesterIds } });
+
+        return res.status(200).json({
+            message: "Semesters fetched successfully",
+            data: { semesters },
+            code: 200
+        });
+    } catch (error) {
+        console.error(`Error fetching semesters for faculty: ${error.message}`);
+        return res.status(500).json({
+            message: "Internal Server Error",
+            data: [],
+            code: 500
+        });
+    }
+};
 
 
 // Get All Faculties
@@ -231,6 +295,7 @@ export const getFaculties = async (req, res) => {
 // Get Faculty by ID
 export const getFacultyById = async (req, res) => {
   try {
+    
     const faculty = await Faculty.findOne({ _id: req.params.id, institutionDomain: req.institutionDomain })
       .populate("departmentId")
       .populate("sections");

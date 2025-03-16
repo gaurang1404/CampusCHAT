@@ -1,17 +1,24 @@
 import express from 'express';
-import { registerAdmin, loginAdmin, updateAdmin } from '../controllers/admin.controller.js';
+import { bulkMarkAttendance, bulkUpdateAttendance, checkAttendanceExists, getAttendanceBySectionAndDate, getAttendanceHistory } from '../controllers/attendance.controller.js';
 import { authenticateJWT } from '../middlewares/auth.middleware.js';
-import { rateLimiter } from '../middlewares/rate.middleware.js';
 
 const router = express.Router();
 
 // Apply rate limit to registration route
-router.post("/register", rateLimiter, registerAdmin);
+router.get("/section/:sectionId/course/:courseId/faculty/:facultyId/date/:date", authenticateJWT, getAttendanceBySectionAndDate);
 
-// Login route for admin
-router.post("/login", loginAdmin);
+router.get("/check/:sectionId/course/:courseId/faculty/:facultyId/date/:date", authenticateJWT, checkAttendanceExists);
 
-// Update Admin
-router.put("/:adminId", authenticateJWT, updateAdmin);
+router.post("/bulk-mark", authenticateJWT, bulkMarkAttendance);
+
+router.post("/bulk-update", authenticateJWT, bulkUpdateAttendance);
+
+router.get("/history/:sectionId/course/:courseId/faculty/:facultyId", authenticateJWT, getAttendanceHistory);
+
+// // Bulk mark attendance
+// router.post("/bulk-mark", bulkMarkAttendance)
+
+// // Bulk update attendance
+// router.post("/bulk-update", bulkUpdateAttendance)
 
 export default router;

@@ -1,6 +1,8 @@
+"use client"
+
 import { useState, useEffect } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Users, BookOpen, Calendar, LayoutDashboard, Home, LogOut } from "lucide-react"
+import { LayoutDashboard, Calendar, Home, LogOut } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import {
   Dialog,
@@ -16,9 +18,7 @@ import { useDispatch, useSelector } from "react-redux"
 import { motion, AnimatePresence } from "framer-motion"
 import axios from "axios"
 import FacultyOverview from "./FacultyOverview"
-import MyCoursesTab from "./MyCoursesTab.jsx"
-import MyStudentsTab from "./MyStudentsTab"
-import MyScheduleTab from "./MyScheduleTab"
+import AttendanceTab from "./AttendanceTab"
 
 const apiUrl = import.meta.env.VITE_API_URL
 
@@ -72,24 +72,24 @@ const FacultyDashboard = () => {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        }                    
-        
+        }
+
         // Get faculty data
         const response = await axios.get(`${apiUrl}/api/faculty/${user._id}`, config)
-        // Expected response: { faculty: { _id, firstName, lastName, email, facultyId, departmentId, sections, etc. } }        
-        
+        // Expected response: { faculty: { _id, firstName, lastName, email, facultyId, departmentId, sections, etc. } }
+
         setFacultyData(response.data.data.faculty)
 
         // Get faculty sections
         const sectionsResponse = await axios.get(`${apiUrl}/api/faculty/${user._id}/sections`, config)
-        // Expected response: { sections: [{ _id, name, semesterId, students, courseFacultyMappings }] }        
+        // Expected response: { sections: [{ _id, name, semesterId, students, courseFacultyMappings }] }
 
         setMySections(sectionsResponse.data.data.sections)
 
         // Get faculty semesters
         const semestersResponse = await axios.get(`${apiUrl}/api/faculty/${user._id}/semesters`, config)
-        // Expected response: { semesters: [{ _id, name, semesterCode, startDate, endDate, isActive }] }      
-        
+        // Expected response: { semesters: [{ _id, name, semesterCode, startDate, endDate, isActive }] }
+
         setMySemesters(semestersResponse.data.data.semesters)
 
         setLoading(false)
@@ -138,7 +138,7 @@ const FacultyDashboard = () => {
               animate={{ opacity: 1 }}
               transition={{ delay: 0.4, duration: 0.5 }}
             >
-              Manage your courses, students, and schedule
+              Manage your courses, students, and attendance
             </motion.p>
           </div>
           <div className="flex gap-3 pr-4">
@@ -186,12 +186,10 @@ const FacultyDashboard = () => {
       <div className="p-4 max-w-[1200px] mx-auto">
         <Tabs defaultValue="dashboard" value={activeTab} onValueChange={setActiveTab} className="w-full">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-            <TabsList className="grid grid-cols-4 mb-4">
+            <TabsList className="grid grid-cols-2 mb-4">
               {[
                 { value: "dashboard", icon: <LayoutDashboard className="h-4 w-4" />, label: "Dashboard" },
-                { value: "courses", icon: <BookOpen className="h-4 w-4" />, label: "My Courses" },
-                { value: "students", icon: <Users className="h-4 w-4" />, label: "My Students" },
-                { value: "schedule", icon: <Calendar className="h-4 w-4" />, label: "My Schedule" },
+                { value: "attendance", icon: <Calendar className="h-4 w-4" />, label: "Attendance" },
               ].map((tab, index) => (
                 <motion.div
                   key={tab.value}
@@ -249,16 +247,14 @@ const FacultyDashboard = () => {
                 )}
               </TabsContent>
 
-              <TabsContent value="courses">
-                <MyCoursesTab facultyData={facultyData} mySections={mySections} />
-              </TabsContent>
-
-              <TabsContent value="students">
-                <MyStudentsTab facultyData={facultyData} mySections={mySections} />
-              </TabsContent>
-
-              <TabsContent value="schedule">
-                <MyScheduleTab facultyData={facultyData} mySemesters={mySemesters} />
+              <TabsContent value="attendance">
+                {loading ? (
+                  <div className="flex justify-center items-center h-64">
+                    <p>Loading attendance data...</p>
+                  </div>
+                ) : (
+                  <AttendanceTab facultyData={facultyData} mySections={mySections} />
+                )}
               </TabsContent>
             </motion.div>
           </AnimatePresence>

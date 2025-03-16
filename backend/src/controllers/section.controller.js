@@ -4,6 +4,7 @@ import { Course } from "../models/course.model.js";
 import { Faculty } from "../models/faculty.model.js";
 
 import winston from "winston";
+import { Student } from "../models/student.model.js";
 
 const logger = winston.createLogger({
     level: "info",
@@ -87,6 +88,43 @@ export const getSections = async (req, res) => {
         });
     } catch (error) {
         logger.error(`Error fetching sections: ${error.message}`);
+        return res.status(500).json({
+            message: "Internal Server Error",
+            data: [],
+            code: 500
+        });
+    }
+};
+
+export const getStudentsInSection = async (req, res) => {
+    try {
+        const { id: sectionId } = req.params;
+
+        // Validate if section exists
+        const section = await Section.findById(sectionId);
+        if (!section) {
+            logger.error(`Section not found for sectionId: ${sectionId}`);
+            return res.status(404).json({
+                message: "Section not found",
+                data: [],
+                code: 404
+            });
+        }
+
+        // Fetch students in the given section
+        const students = await Student.find({ sectionId })
+            .select("_id firstName lastName collegeEmail studentId");
+
+        logger.info(`Fetched ${students.length} students for section: ${sectionId}`);
+
+        return res.status(200).json({
+            message: "Students fetched successfully",
+            data: { students },
+            code: 200
+        });
+
+    } catch (error) {
+        logger.error(`Error fetching students: ${error.message}`);
         return res.status(500).json({
             message: "Internal Server Error",
             data: [],

@@ -8,6 +8,8 @@ import axios from "axios"
 import { Progress } from "@/components/ui/progress"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
+const apiUrl = import.meta.env.VITE_API_URL
+
 export const FacultyOverview = (props) => {
   const { facultyData, mySemesters, mySections } = props
   const [selectedSection, setSelectedSection] = useState(null)
@@ -40,10 +42,22 @@ export const FacultyOverview = (props) => {
       setLoading(true)
       setSelectedSection(section)
 
+      const token = localStorage.getItem("token") || sessionStorage.getItem("token")
+
+      // Set up Axios headers with the token
+      const config = {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        }
+      }
+      console.log(section._id);
+      
       // Fetch students in this section
-      const response = await axios.get(`/api/sections/${section._id}/students`)
+      const response = await axios.get(`${apiUrl}/api/section/${section._id}/students`, config)
       // Expected response: { students: [{ _id, firstName, lastName, email, studentId }] }
-      setSectionStudents(response.data.students)
+      console.log(response);
+      
+      setSectionStudents(response.data.data.students)
 
       // Find the course that this faculty teaches in this section
       const courseFacultyMapping = section.courseFacultyMappings.find(
@@ -150,7 +164,7 @@ export const FacultyOverview = (props) => {
 
       {/* Section Details Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-3xl">
+        <DialogContent className="max-w-3xl bg-white">
           <DialogHeader>
             <DialogTitle>{selectedSection ? selectedSection.name : "Section Details"}</DialogTitle>
             <DialogDescription>
@@ -196,7 +210,7 @@ export const FacultyOverview = (props) => {
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             {student.firstName} {student.lastName}
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{student.email}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{student.collegeEmail}</td>
                         </tr>
                       ))}
                     </tbody>

@@ -6,7 +6,8 @@ import {
   updateSection, 
   deleteSection, 
   addCourseFacultyMapping,
-  deleteCourseFacultyMapping
+  deleteCourseFacultyMapping,
+  getStudentsInSection
 } from '../controllers/section.controller.js';
 import { authenticateJWT } from '../middlewares/auth.middleware.js';
 import { rateLimiter } from '../middlewares/rate.middleware.js';
@@ -26,7 +27,10 @@ router.delete("/mapping", authenticateJWT, deleteCourseFacultyMapping);
 router.get("/", authenticateJWT, getSections);
 
 // Route to get a single section by ID (protected)
+router.get("/:id/students", authenticateJWT, getStudentsInSection);
+
 router.get("/:id", authenticateJWT, getSectionById);
+// Route to get a single section by ID (protected)
 
 // Route to update section details (protected)
 router.put("/:id", authenticateJWT, updateSection);

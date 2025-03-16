@@ -111,7 +111,8 @@ export const getCourses = async (req, res) => {
 };
 
 export const getCourseById = async (req, res) => {
-  try {
+  try {   
+    
     const course = await Course.findOne({ _id: req.params.id, institutionDomain: req.institutionDomain }).populate("departmentId");
     if (!course) {
       return res.status(404).json({

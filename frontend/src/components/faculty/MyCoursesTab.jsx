@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { BookOpen, Users, Clock } from "lucide-react"
 import { motion } from "framer-motion"
 import axios from "axios"
+const apiUrl = import.meta.env.VITE_API_URL
 
 const MyCoursesTab = ({ facultyData, mySections }) => {
   const [courses, setCourses] = useState([])
@@ -32,6 +33,15 @@ const MyCoursesTab = ({ facultyData, mySections }) => {
       try {
         setLoading(true)
 
+        const token = localStorage.getItem("token") || sessionStorage.getItem("token")
+
+        // Set up Axios headers with the token
+        const config = {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        } 
+
         // Extract all course IDs from section mappings
         const courseIds = new Set()
         mySections.forEach((section) => {
@@ -41,12 +51,18 @@ const MyCoursesTab = ({ facultyData, mySections }) => {
             }
           })
         })
-
+        console.log(courseIds);
+        
+        
         // Fetch details for each course
-        const coursePromises = Array.from(courseIds).map((courseId) => axios.get(`/api/courses/${courseId}`))
+        const coursePromises = Array.from(courseIds).map((courseId) => axios.get(`${apiUrl}/api/course/${courseId._id}`, config))
 
         const courseResponses = await Promise.all(coursePromises)
-        const courseData = courseResponses.map((response) => response.data.course)
+        
+        console.log(courseResponses);
+        
+
+        const courseData = courseResponses.map((response) => response.data.data)
 
         setCourses(courseData)
         setLoading(false)

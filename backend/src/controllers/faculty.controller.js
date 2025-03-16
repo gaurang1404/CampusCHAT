@@ -191,6 +191,9 @@ export const loginFaculty = async (req, res) => {
       { expiresIn: '30d' } // Token expires in 30 days
     );
 
+    console.log(faculty.institutionDomain);
+    
+
     // Send success response with token
     logger.info(`${new Date().toISOString()} - Success: Faculty logged in successfully`);
     return res.status(200).json({
@@ -220,9 +223,9 @@ export const getFacultySections = async (req, res) => {
 
     // Find sections where the faculty is assigned
     const sections = await Section.find({ "courseFacultyMappings.facultyId": facultyId })
-      .populate("semesterId", "name") // Populating semester details
-      .populate("students", "firstName lastName") // Populating student names
-      .populate("courseFacultyMappings.courseId", "name"); // Populating course names
+      .populate("semesterId")
+      .populate("students") 
+      .populate("courseFacultyMappings.courseId"); 
 
     return res.status(200).json({
       message: "Sections retrieved successfully",

@@ -1,5 +1,5 @@
 import express from 'express';
-import { bulkMarkAttendance, bulkUpdateAttendance, checkAttendanceExists, getAttendanceBySectionAndDate, getAttendanceHistory } from '../controllers/attendance.controller.js';
+import { bulkMarkAttendance, bulkUpdateAttendance, checkAttendanceExists, getAttendanceBySectionAndDate, getAttendanceHistory, isAttendanceMarked } from '../controllers/attendance.controller.js';
 import { authenticateJWT } from '../middlewares/auth.middleware.js';
 
 const router = express.Router();
@@ -15,6 +15,7 @@ router.post("/bulk-update", authenticateJWT, bulkUpdateAttendance);
 
 router.get("/history/:sectionId/course/:courseId/faculty/:facultyId", authenticateJWT, getAttendanceHistory);
 
+router.get("/is-marked/:sectionId/section/:courseId/course/:facultyId/faculty", authenticateJWT, isAttendanceMarked);
 // // Bulk mark attendance
 // router.post("/bulk-mark", bulkMarkAttendance)
 

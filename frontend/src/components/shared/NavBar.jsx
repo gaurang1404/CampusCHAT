@@ -1,4 +1,4 @@
-import React, { forwardRef } from "react";
+import React, { forwardRef, useEffect } from "react";
 import { useState } from 'react';
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -49,9 +49,11 @@ export const NavBar = () => {
     const [open, setOpen] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
     const user = useSelector((state) => state.auth.user);
-
-
     const dispatch = useDispatch();
+    
+
+    // dispatch(logout());
+
 
     const handleLogout = () => {
         dispatch(logout());
@@ -86,6 +88,8 @@ export const NavBar = () => {
 
     ]
 
+    console.log(user);
+    
 
     return (
         <div className="w-full bg-[#63144c]">
@@ -145,12 +149,24 @@ export const NavBar = () => {
                             {
                                 user &&
                                 <NavigationMenuItem className="hidden sm:flex justify-center items-center">
+                                {
+                                    user.role === "Admin" &&
                                     <Link
                                         className="text-white mr-3 hover:underline"
                                         to={"/admin-dashboard"}
                                     >
                                         Dashboard
+                                    </Link>                                    
+                                }
+                                {
+                                    user.role === "Faculty" &&
+                                    <Link
+                                        className="text-white mr-3 hover:underline"
+                                        to={"/faculty-dashboard"}
+                                    >
+                                        Dashboard
                                     </Link>
+                                }
                                 </NavigationMenuItem>
                             }
 
@@ -170,23 +186,7 @@ export const NavBar = () => {
                                 </NavigationMenuItem>
                             }
 
-
-
-                            {
-                                user && !user.email.includes("admin") &&
-                                <NavigationMenuItem className=" hidden sm:flex justify-center items-center">
-                                    <Link className="text-white mr-5 hover:underline" href="/">
-                                        Grades
-                                    </Link>
-                                </NavigationMenuItem>
-                            }
-                            { user && !user.email.includes("admin") &&
-                                <NavigationMenuItem className=" hidden sm:flex justify-center items-center">
-                                    <Link className="text-white mr-5 hover:underline" href="/">
-                                        Attendance
-                                    </Link>
-                                </NavigationMenuItem>
-                            }
+                            
 
 
                         </NavigationMenuList>
@@ -221,10 +221,10 @@ export const NavBar = () => {
                                         </Avatar>
                                     </div>
                                     <div>
-                                        <Badge className="bg-[#63144c]">{user.email.includes("admin") ? "Admin" : "Student"}</Badge>
+                                        <Badge className="bg-[#63144c]">{user && user.email.includes("admin") ? "Admin" : "Student"}</Badge>
                                     </div>
                                     <div>
-                                        <Badge className="bg-[#63144c]">{user.email.includes("admin") ? user.institutionDomain : user.studentId}</Badge>
+                                        <Badge className="bg-[#63144c]">{user && user.email.includes("admin") ? user.institutionDomain : user.studentId}</Badge>
                                     </div>
                                 </div>
                                 <div className="flex flex-col gap-2">
@@ -232,7 +232,7 @@ export const NavBar = () => {
 
                                     <span className="bg-[#63144c] text-sm text-center p-1 rounded-[10px]">
                                         {
-                                            (user.email.includes("admin")) ?
+                                            (user && user.email.includes("admin")) ?
                                         (user.institutionName.length > 15) ? user.institutionName.substring(0, 12) + "..." : user.institutionName : 
                                         (user.departmentId.length > 15) ? user.departmentId.substring(0, 12) + "..." : user.departmentId
                                         }
@@ -242,19 +242,11 @@ export const NavBar = () => {
                             <nav className="   bg-[#63144c] w-full m-auto rounded-b-2xl pt-6 text-center pb-6">
                                 <ul className="space-y-4">
                                     {
-                                        user.email.includes("admin") &&
+                                        user && user.email.includes("admin") &&
                                         <Link to={"/admin-dashboard"}>
                                             <li className="bg-[#1A1A1D] shadow-5xl w-[90%] m-auto  hover:bg-[#1e0b18] p-3 rounded-[2rem] cursor-pointer">Dashboard</li>
                                         </Link>
-                                    }
-                                    {
-                                        !user.email.includes("admin") &&
-                                        <li className="bg-[#1A1A1D] w-[90%] m-auto  hover:bg-[#1e0b18] p-3 rounded-[2rem] cursor-pointer">Grades</li>
-                                    }
-                                    {
-                                        !user.email.includes("admin") &&
-                                        <li className="bg-[#1A1A1D] w-[90%] m-auto  hover:bg-[#1e0b18] p-3 rounded-[2rem] cursor-pointer">Attendance</li>
-                                    }
+                                    }                                    
 
                                     <li className="bg-[#1A1A1D] w-[90%] m-auto  hover:bg-[#1e0b18] p-3 rounded-[2rem] cursor-pointer">Profile</li>
                                     <Dialog open={open} onOpenChange={setOpen}>
@@ -301,7 +293,7 @@ export const NavBar = () => {
                                 </div>
                                 <div>
                                     {
-                                        (user.email.includes("admin") && <Badge className="bg-[#63144c]">Admin</Badge>) 
+                                        (user && user.email.includes("admin") && <Badge className="bg-[#63144c]">Admin</Badge>) 
                                     } 
                                 </div>
                                 <div>
@@ -312,7 +304,7 @@ export const NavBar = () => {
                                 <span className="bg-[#63144c] p-1 rounded-[10px] text-center">{user.firstName + " " + user.lastName}</span>
 
                                 {
-                                    !user.email.includes("admin") ?
+                                    user && !user.email.includes("admin") ?
                                         <span className="bg-[#63144c] text-sm text-center p-1 rounded-[10px]">{user.departmentId.name}</span> : null
                                 }
 

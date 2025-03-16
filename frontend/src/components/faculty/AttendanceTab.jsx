@@ -211,6 +211,9 @@ const AttendanceTab = ({ facultyData, mySections }) => {
       const facultyId = facultyData._id
       const formattedDate = format(attendanceDate, "yyyy-MM-dd")
 
+      console.log(formattedDate);
+
+
       // If we're creating new attendance (not editing), check if attendance already exists for this day
       if (!isEditing) {
         const checkResponse = await axios.get(
@@ -439,11 +442,11 @@ const AttendanceTab = ({ facultyData, mySections }) => {
                     {selectedSection.courseFacultyMappings?.find(
                       (mapping) => mapping.facultyId === facultyData._id,
                     ) && (
-                      <Badge className="bg-[#63144c] text-white">
-                        {selectedSection.courseFacultyMappings.find((mapping) => mapping.facultyId === facultyData._id)
-                          ?.courseId?.name || "Unknown Course"}
-                      </Badge>
-                    )}
+                        <Badge className="bg-[#63144c] text-white">
+                          {selectedSection.courseFacultyMappings.find((mapping) => mapping.facultyId === facultyData._id)
+                            ?.courseId?.name || "Unknown Course"}
+                        </Badge>
+                      )}
                   </CardTitle>
                   <CardDescription>
                     {isToday(attendanceDate)
@@ -512,86 +515,86 @@ const AttendanceTab = ({ facultyData, mySections }) => {
                       </div>
                     </div>
 
-                    <div
-                      className={`border rounded-md overflow-hidden ${existingAttendance && existingAttendance.length > 0 ? "border-green-500 border-2" : ""}`}
-                    >
-                      <table className="min-w-full divide-y divide-gray-200">
-                        <thead
-                          className={`${existingAttendance && existingAttendance.length > 0 ? "bg-green-50" : "bg-gray-50"}`}
-                        >
-                          <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Student ID
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Name
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Status
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                          <AnimatePresence>
-                            {students.map((student) => (
-                              <motion.tr
-                                key={student._id}
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                exit={{ opacity: 0 }}
-                                transition={{ duration: 0.2 }}
-                              >
-                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                  {student.studentId}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                  {student.firstName} {student.lastName}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                  <div className="flex items-center gap-2">
-                                    <Checkbox
-                                      id={`attendance-${student._id}`}
-                                      checked={attendanceStatus[student._id] === "Present"}
-                                      onCheckedChange={() => toggleAttendanceStatus(student._id)}
-                                      disabled={savingAttendance}
-                                    />
-                                    <label
-                                      htmlFor={`attendance-${student._id}`}
-                                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-                                    >
-                                      {attendanceStatus[student._id] === "Present" ? (
-                                        <span className="flex items-center text-green-600">
-                                          <Check className="h-4 w-4 mr-1" /> Present
-                                        </span>
-                                      ) : (
-                                        <span className="flex items-center text-red-600">
-                                          <X className="h-4 w-4 mr-1" /> Absent
-                                        </span>
-                                      )}
-                                    </label>
-                                  </div>
-                                </td>
-                              </motion.tr>
-                            ))}
-                          </AnimatePresence>
-
-                          {students.length === 0 && (
+                    <div className="border rounded-md overflow-hidden overflow-x-auto">
+                      <div className={`w-full ${existingAttendance && existingAttendance.length > 0 ? "border-green-500 border-2" : ""}`}>
+                        <table className="min-w-full divide-y divide-gray-200">
+                          <thead
+                            className={`${existingAttendance && existingAttendance.length > 0 ? "bg-green-50" : "bg-gray-50"}`}
+                          >
                             <tr>
-                              <td colSpan={3} className="px-6 py-4 text-center text-sm text-gray-500">
-                                No students found in this section.
-                              </td>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Student ID
+                              </th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Name
+                              </th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Status
+                              </th>
                             </tr>
-                          )}
-                        </tbody>
-                      </table>
+                          </thead>
+                          <tbody className="bg-white divide-y divide-gray-200">
+                            <AnimatePresence>
+                              {students.map((student) => (
+                                <motion.tr
+                                  key={student._id}
+                                  initial={{ opacity: 0 }}
+                                  animate={{ opacity: 1 }}
+                                  exit={{ opacity: 0 }}
+                                  transition={{ duration: 0.2 }}
+                                >
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                    {student.studentId}
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    {student.firstName} {student.lastName}
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap">
+                                    <div className="flex items-center gap-2">
+                                      <Checkbox
+                                        id={`attendance-${student._id}`}
+                                        checked={attendanceStatus[student._id] === "Present"}
+                                        onCheckedChange={() => toggleAttendanceStatus(student._id)}
+                                        disabled={savingAttendance}
+                                      />
+                                      <label
+                                        htmlFor={`attendance-${student._id}`}
+                                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                                      >
+                                        {attendanceStatus[student._id] === "Present" ? (
+                                          <span className="flex items-center text-green-600">
+                                            <Check className="h-4 w-4 mr-1" /> Present
+                                          </span>
+                                        ) : (
+                                          <span className="flex items-center text-red-600">
+                                            <X className="h-4 w-4 mr-1" /> Absent
+                                          </span>
+                                        )}
+                                      </label>
+                                    </div>
+                                  </td>
+                                </motion.tr>
+                              ))}
+                            </AnimatePresence>
+
+                            {students.length === 0 && (
+                              <tr>
+                                <td colSpan={3} className="px-6 py-4 text-center text-sm text-gray-500">
+                                  No students found in this section.
+                                </td>
+                              </tr>
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
 
-                    <div className="mt-6 flex justify-end">
+                    <div className="flex-col mt-6 sm:flex-row ">
                       <Button
                         variant="outline"
                         onClick={fetchAttendanceHistory}
                         disabled={loadingHistory}
-                        className="mr-2"
+                        className="mr-2 w-full sm:w-[12rem] mb-2"
                       >
                         <CalendarIcon className="mr-2 h-4 w-4" />
                         {loadingHistory ? "Loading..." : "View History"}
@@ -599,7 +602,7 @@ const AttendanceTab = ({ facultyData, mySections }) => {
                       <Button
                         onClick={saveAttendance}
                         disabled={savingAttendance || students.length === 0}
-                        className="bg-[#63144c] hover:bg-[#4a0f39] text-white"
+                        className="bg-[#63144c] hover:bg-[#4a0f39] text-white w-full sm:w-[12rem]"
                       >
                         {savingAttendance ? (
                           <>Saving...</>
@@ -619,7 +622,7 @@ const AttendanceTab = ({ facultyData, mySections }) => {
         )}
       </AnimatePresence>
       {showCalendarView && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 " style={{marginTop: "0px"}}>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 " style={{ marginTop: "0px" }}>
           <div className="max-w-md w-full mt-0">
             <AttendanceCalendarView
               attendanceHistory={attendanceHistory}
@@ -630,7 +633,7 @@ const AttendanceTab = ({ facultyData, mySections }) => {
               }}
               semesterStartDate={selectedSection.semesterId?.startDate}
               semesterEndDate={selectedSection.semesterId?.endDate}
-              sectionId={selectedSection}              
+              sectionId={selectedSection}
               facultyId={facultyData}
               className="mt-0"
             />

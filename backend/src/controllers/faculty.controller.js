@@ -161,14 +161,12 @@ export const loginFaculty = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Validate email and password
     if (!email || !password) {
       const errorMessage = 'Email and password are required';
       logger.error(`${new Date().toISOString()} - Error: ${errorMessage}`);
       return res.status(400).json({ message: errorMessage, data: [], code: 400 });
     }
 
-    // Find the admin by email
     let faculty = await Faculty.findOne({ email });
     if (!faculty) {
       const errorMessage = 'Faculty not found';
@@ -176,7 +174,6 @@ export const loginFaculty = async (req, res) => {
       return res.status(404).json({ message: errorMessage, data: [], code: 404 });
     }
 
-    // Compare the provided password with the stored hashed password
     const match = await bcrypt.compare(password, faculty.password);
     if (!match) {
       const errorMessage = 'Incorrect password';
@@ -184,30 +181,31 @@ export const loginFaculty = async (req, res) => {
       return res.status(401).json({ message: errorMessage, data: [], code: 401 });
     }
 
-    // Create JWT token
     const token = jwt.sign(
-      { userId: faculty._id, email: faculty.email, role: "Admin", institutionDomain: faculty.institutionDomain },
+      { userId: faculty._id, email: faculty.email, role: "Faculty", institutionDomain: faculty.institutionDomain },
       process.env.JWT_SECRET_KEY, 
-      { expiresIn: '30d' } // Token expires in 30 days
+      { expiresIn: '30d' } 
     );
 
-    console.log(faculty.institutionDomain);
-    
+    // Convert to plain object and set the role
+    let facultyData = faculty.toObject();
+    facultyData.role = "Faculty";
 
-    // Send success response with token
+    console.log(facultyData.institutionDomain);
+
     logger.info(`${new Date().toISOString()} - Success: Faculty logged in successfully`);
     return res.status(200).json({
       message: 'Login successful',
-      data: [{ token }, {faculty}],
+      data: [{ token }, { faculty: facultyData }],
       code: 200
     });
 
   } catch (error) {
-    // Log error with timestamp
     logger.error(`${new Date().toISOString()} - Error: Error logging in - ${error.message}`);
     return res.status(500).json({ message: 'Internal Server Error', data: [], code: 500 });
   }
 };
+
 
 export const getFacultySections = async (req, res) => {
   try {

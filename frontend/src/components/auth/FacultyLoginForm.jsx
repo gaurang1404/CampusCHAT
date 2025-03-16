@@ -127,7 +127,8 @@ const FacultyLoginForm = () => {
     
             if (response.data.code === 200) {
                 showToast("Login successful! Redirecting to dashboard");
-    
+                console.log(response.data.data[1].faculty);
+                
                 // Set user in Redux Persist (automatically stored in localStorage)
                 dispatch(setUser(response.data.data[1].faculty));                
     

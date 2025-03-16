@@ -115,72 +115,75 @@ const FacultyDashboard = () => {
   }
 
   return (
-    <div>
+    <div className="w-full ">
       <div className="bg-[#63144c]">
-        <motion.header
-          className="mb-6 pt-10 pb-6 pl-4 max-w-[1200px] mx-auto flex justify-between items-center"
-          variants={headerVariants}
-          initial="hidden"
-          animate="visible"
-        >
-          <div>
-            <motion.h1
-              className="text-4xl font-extrabold text-white"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.2, duration: 0.5 }}
-            >
-              Faculty Dashboard
-            </motion.h1>
-            <motion.p
-              className="text-white mt-2"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.4, duration: 0.5 }}
-            >
-              Manage your courses, students, and attendance
-            </motion.p>
-          </div>
-          <div className="flex gap-3 pr-4">
-            <motion.button
-              onClick={handleHomeClick}
-              className="bg-white text-[#63144c] hover:bg-gray-100 px-4 py-2 rounded-md flex items-center gap-2 font-medium"
-              variants={buttonVariants}
-              whileHover="hover"
-              whileTap="tap"
-            >
-              <Home className="h-4 w-4" />
-              <span className="hidden md:inline">Home</span>
-            </motion.button>
-            <Dialog open={open} onOpenChange={setOpen}>
-              <DialogTrigger asChild>
-                <motion.button
-                  className="bg-gray-200 text-gray-800 hover:bg-gray-300 px-4 py-2 rounded-md flex items-center gap-2 font-medium"
-                  variants={buttonVariants}
-                  whileHover="hover"
-                  whileTap="tap"
-                >
-                  <LogOut className="h-4 w-4" />
-                  <span className="hidden md:inline">Logout</span>
-                </motion.button>
-              </DialogTrigger>
-              <DialogContent className="bg-white">
-                <DialogHeader>
-                  <DialogTitle>Are you sure you want to logout?</DialogTitle>
-                  <DialogDescription>You will be logged out and redirected to the home page.</DialogDescription>
-                </DialogHeader>
-                <div className="flex justify-end gap-2 mt-4">
-                  <Button variant="outline" onClick={() => setOpen(false)}>
-                    Cancel
-                  </Button>
-                  <Button onClick={handleLogout} className="bg-red-600 text-white hover:bg-red-800">
-                    Logout
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
-          </div>
-        </motion.header>
+
+        <div className=" max-w-[1200px] m-auto">
+          <motion.header
+            className="w-full mb-6 pt-10 pb-6 pl-4 flex justify-between items-center"
+            variants={headerVariants}
+            initial="hidden"
+            animate="visible"
+          >
+            <div>
+              <motion.h1
+                className="text-4xl font-extrabold text-white"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.2, duration: 0.5 }}
+              >
+                Faculty Dashboard
+              </motion.h1>
+              <motion.p
+                className="text-white mt-2"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.4, duration: 0.5 }}
+              >
+                Manage your courses, students, and attendance
+              </motion.p>
+            </div>
+            <div className="flex gap-3 pr-4 flex-wrap">
+              <motion.button
+                onClick={handleHomeClick}
+                className="bg-white text-[#63144c] hover:bg-gray-100 px-4 py-2 rounded-md flex items-center gap-2 font-medium"
+                variants={buttonVariants}
+                whileHover="hover"
+                whileTap="tap"
+              >
+                <Home className="h-4 w-4" />
+                <span className="hidden md:inline">Home</span>
+              </motion.button>
+              <Dialog open={open} onOpenChange={setOpen}>
+                <DialogTrigger asChild>
+                  <motion.button
+                    className="bg-gray-200 text-gray-800 hover:bg-gray-300 px-4 py-2 rounded-md flex items-center gap-2 font-medium"
+                    variants={buttonVariants}
+                    whileHover="hover"
+                    whileTap="tap"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    <span className="hidden md:inline">Logout</span>
+                  </motion.button>
+                </DialogTrigger>
+                <DialogContent className="bg-white">
+                  <DialogHeader>
+                    <DialogTitle>Are you sure you want to logout?</DialogTitle>
+                    <DialogDescription>You will be logged out and redirected to the home page.</DialogDescription>
+                  </DialogHeader>
+                  <div className="flex justify-end gap-2 mt-4">
+                    <Button variant="outline" onClick={() => setOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button onClick={handleLogout} className="bg-red-600 text-white hover:bg-red-800">
+                      Logout
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
+          </motion.header>
+        </div>
       </div>
 
       <div className="p-4 max-w-[1200px] mx-auto">

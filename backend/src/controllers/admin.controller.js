@@ -98,14 +98,12 @@ export const loginAdmin = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Validate email and password
     if (!email || !password) {
       const errorMessage = 'Email and password are required';
       logger.error(`${new Date().toISOString()} - Error: ${errorMessage}`);
       return res.status(400).json({ message: errorMessage, data: [], code: 400 });
     }
 
-    // Find the admin by email
     let admin = await Admin.findOne({ email });
     if (!admin) {
       const errorMessage = 'Admin not found';
@@ -113,7 +111,6 @@ export const loginAdmin = async (req, res) => {
       return res.status(404).json({ message: errorMessage, data: [], code: 404 });
     }
 
-    // Compare the provided password with the stored hashed password
     const match = await bcrypt.compare(password, admin.password);
     if (!match) {
       const errorMessage = 'Incorrect password';
@@ -121,27 +118,29 @@ export const loginAdmin = async (req, res) => {
       return res.status(401).json({ message: errorMessage, data: [], code: 401 });
     }
 
-    // Create JWT token
     const token = jwt.sign(
       { userId: admin._id, email: admin.email, role: "Admin", institutionDomain: admin.institutionDomain },
-      process.env.JWT_SECRET_KEY, // Ensure you have a secret key stored in your environment variables
-      { expiresIn: '30d' } // Token expires in 30 days
+      process.env.JWT_SECRET_KEY,
+      { expiresIn: '30d' }
     );    
 
-    // Send success response with token
+    // Convert Mongoose document to plain object and modify it
+    let adminData = admin.toObject();
+    adminData.role = "Admin";
+
     logger.info(`${new Date().toISOString()} - Success: Admin logged in successfully`);
     return res.status(200).json({
       message: 'Login successful',
-      data: [{ token }, {admin}],
+      data: [{ token }, { admin: adminData }],
       code: 200
     });
 
   } catch (error) {
-    // Log error with timestamp
     logger.error(`${new Date().toISOString()} - Error: Error logging in - ${error.message}`);
     return res.status(500).json({ message: 'Internal Server Error', data: [], code: 500 });
   }
 };
+
 
 export const updateAdmin = async (req, res) => {
   try {

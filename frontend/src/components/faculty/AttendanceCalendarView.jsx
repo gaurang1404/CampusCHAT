@@ -10,13 +10,14 @@ import {
   isSameMonth,
   isSameDay,
   parseISO,
+  isAfter,
+  isBefore,
 } from "date-fns";
 import {
   ChevronLeft,
   ChevronRight,
   X,
   Calendar as CalendarIcon,
-  Check,
   Loader2,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -39,6 +40,7 @@ export function AttendanceCalendarView({
   const [selectedDate, setSelectedDate] = useState(null);
   const [markedDates, setMarkedDates] = useState(new Map());
   const [isLoading, setIsLoading] = useState(false);
+  const today = new Date();
 
   // Create a map of dates with attendance
   const attendanceDatesMap = new Map();
@@ -67,18 +69,21 @@ export function AttendanceCalendarView({
         const startDate = format(startOfMonth(currentMonth), "yyyy-MM-dd");
         const endDate = format(endOfMonth(currentMonth), "yyyy-MM-dd");
 
-        const token = localStorage.getItem("token") || sessionStorage.getItem("token")
-        const config = { headers: { Authorization: `Bearer ${token}` } }
+        const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+        const config = { headers: { Authorization: `Bearer ${token}` } };
 
-        const { data } = await axios.get(
-          `${apiUrl}/api/attendance/is-marked/${sectionId}/section/${courseId}/course/${facultyId}/faculty`, config);
+        const response = await axios.get(
+          `${apiUrl}/api/attendance/is-marked/${sectionId._id}/section/${courseId._id}/course/${facultyId._id}/faculty`, 
+          config
+        );
 
+        const data = response.data.data;        
+        
         const newMarkedDates = new Map();
         if (Array.isArray(data)) {
-          data.forEach((item) => {
-            if (item.date) {
-              newMarkedDates.set(format(parseISO(item.date), "yyyy-MM-dd"), true);
-            }
+          data.forEach((dateString) => {
+            // The API returns an array of date strings, so we use the dateString directly
+            newMarkedDates.set(dateString, true);
           });
         }
 
@@ -109,17 +114,17 @@ export function AttendanceCalendarView({
   const prevMonthDays =
     startDay > 0
       ? eachDayOfInterval({
-          start: new Date(monthStart.getFullYear(), monthStart.getMonth(), monthStart.getDate() - startDay),
-          end: new Date(monthStart.getFullYear(), monthStart.getMonth(), monthStart.getDate() - 1),
-        })
+        start: new Date(monthStart.getFullYear(), monthStart.getMonth(), monthStart.getDate() - startDay),
+        end: new Date(monthStart.getFullYear(), monthStart.getMonth(), monthStart.getDate() - 1),
+      })
       : [];
 
   const nextMonthDays =
     6 - endDay > 0
       ? eachDayOfInterval({
-          start: new Date(monthEnd.getFullYear(), monthEnd.getMonth(), monthEnd.getDate() + 1),
-          end: new Date(monthEnd.getFullYear(), monthEnd.getMonth(), monthEnd.getDate() + (6 - endDay)),
-        })
+        start: new Date(monthEnd.getFullYear(), monthEnd.getMonth(), monthEnd.getDate() + 1),
+        end: new Date(monthEnd.getFullYear(), monthEnd.getMonth(), monthEnd.getDate() + (6 - endDay)),
+      })
       : [];
 
   // Handle day click
@@ -146,9 +151,11 @@ export function AttendanceCalendarView({
   const hasAttendance = (date) => attendanceDatesMap.has(format(date, "yyyy-MM-dd"));
 
   const isDateMarked = (date) => markedDates.has(format(date, "yyyy-MM-dd"));
+  
+  const isPastDate = (date) => isBefore(date, today) && !isSameDay(date, today);
 
   const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-  
+
   return (
     <Card className="border shadow-lg bg-white mt-0">
       <CardHeader className="flex flex-row items-center justify-between pb-2 mt-0">
@@ -166,9 +173,9 @@ export function AttendanceCalendarView({
       <CardContent>
         {/* Calendar header */}
         <div className="flex items-center justify-between mb-4">
-          <Button 
-            variant="outline" 
-            size="sm" 
+          <Button
+            variant="outline"
+            size="sm"
             onClick={prevMonth}
             className="flex items-center"
             disabled={isLoading}
@@ -180,9 +187,9 @@ export function AttendanceCalendarView({
             {format(currentMonth, "MMMM yyyy")}
             {isLoading && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
           </h2>
-          <Button 
-            variant="outline" 
-            size="sm" 
+          <Button
+            variant="outline"
+            size="sm"
             onClick={nextMonth}
             className="flex items-center"
             disabled={isLoading}
@@ -191,19 +198,19 @@ export function AttendanceCalendarView({
             <ChevronRight className="h-4 w-4 ml-1" />
           </Button>
         </div>
-        
+
         {/* Calendar grid */}
         <div className="grid grid-cols-7 gap-1">
           {/* Weekday headers */}
           {weekdays.map((day) => (
-            <div 
-              key={day} 
+            <div
+              key={day}
               className="h-8 flex items-center justify-center text-sm font-medium text-gray-500"
             >
               {day}
             </div>
           ))}
-          
+
           {/* Previous month days */}
           {prevMonthDays.map((day) => (
             <div
@@ -213,37 +220,44 @@ export function AttendanceCalendarView({
               {day.getDate()}
             </div>
           ))}
-          
+
           {/* Current month days */}
           {daysInMonth.map((day) => {
             const dateStr = format(day, "yyyy-MM-dd");
-            const isToday = isSameDay(day, new Date());
+            const isToday = isSameDay(day, today);
             const isSelected = selectedDate && isSameDay(day, selectedDate);
             const isDisabled = isDateDisabled(day);
             const isSpecial = isSpecialDate(day);
             const hasAttendanceRecord = hasAttendance(day);
             const isMarked = isDateMarked(day);
-            
+            const isPast = isPastDate(day);
+
             let dayClasses = "h-10 flex items-center justify-center text-sm rounded-full relative";
-            
+
             if (isDisabled) {
               dayClasses += " text-gray-300 cursor-not-allowed";
             } else {
-              dayClasses += " cursor-pointer hover:bg-gray-100";
-              
+              dayClasses += " cursor-pointer hover:bg-gray-400 hover:text-white";
+
               if (isToday) {
                 dayClasses += " bg-green-200 text-green-900 font-bold";
               }
-              
+
               if (isSelected) {
                 dayClasses += " bg-[#63144c] text-white";
+              } else if (isMarked) {
+                // If attendance is marked, make it completely green
+                dayClasses += " bg-green-500 text-white font-bold";
               } else if (isSpecial) {
                 dayClasses += " bg-blue-200 text-blue-900 font-semibold";
               } else if (hasAttendanceRecord) {
-                dayClasses += " bg-green-100 text-green-800 font-bold border-2 border-green-300";
+                dayClasses += " bg-green-500 text-white font-bold";
+              } else if (isPast && !isMarked) {
+                // If it's a past date and attendance is not marked, make it light yellow
+                dayClasses += " bg-yellow-100 text-yellow-800";
               }
             }
-            
+
             return (
               <div
                 key={day.toString()}
@@ -251,15 +265,10 @@ export function AttendanceCalendarView({
                 onClick={() => !isDisabled && handleDayClick(day)}
               >
                 {day.getDate()}
-                {isMarked && (
-                  <div className="absolute top-0 right-0">
-                    <Check className="h-3 w-3 text-green-600" />
-                  </div>
-                )}
               </div>
             );
           })}
-          
+
           {/* Next month days */}
           {nextMonthDays.map((day) => (
             <div
@@ -270,28 +279,28 @@ export function AttendanceCalendarView({
             </div>
           ))}
         </div>
-        
+
         {/* Legend */}
         <div className="mt-6 text-sm">
           <div className="flex flex-wrap gap-4">
             <div className="flex items-center gap-2">
-              <div className="h-3 w-3 rounded-full bg-green-300 border-2 border-green-300"></div>
-              <span>Attendance Recorded</span>
+              <div className="h-3 w-3 rounded-full bg-green-500"></div>
+              <span>Attendance Marked</span>
             </div>
-            
+
+            <div className="flex items-center gap-2">
+              <div className="h-3 w-3 rounded-full bg-yellow-100"></div>
+              <span>Past Date (No Attendance)</span>
+            </div>
+
             <div className="flex items-center gap-2">
               <div className="h-3 w-3 rounded-full bg-blue-200"></div>
               <span>Special Date</span>
             </div>
-            
+
             <div className="flex items-center gap-2">
               <div className="h-3 w-3 rounded-full bg-green-200"></div>
               <span>Today</span>
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <Check className="h-3 w-3 text-green-600" />
-              <span>Marked Date</span>
             </div>
           </div>
 

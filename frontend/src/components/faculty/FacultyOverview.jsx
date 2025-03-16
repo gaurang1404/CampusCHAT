@@ -51,12 +51,12 @@ export const FacultyOverview = (props) => {
         }
       }
       console.log(section._id);
-      
+
       // Fetch students in this section
       const response = await axios.get(`${apiUrl}/api/section/${section._id}/students`, config)
       // Expected response: { students: [{ _id, firstName, lastName, email, studentId }] }
       console.log(response);
-      
+
       setSectionStudents(response.data.data.students)
 
       // Find the course that this faculty teaches in this section
@@ -164,7 +164,7 @@ export const FacultyOverview = (props) => {
 
       {/* Section Details Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-3xl bg-white">
+        <DialogContent className="max-w-3xl bg-white max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{selectedSection ? selectedSection.name : "Section Details"}</DialogTitle>
             <DialogDescription>
@@ -187,34 +187,41 @@ export const FacultyOverview = (props) => {
 
               {sectionStudents.length > 0 ? (
                 <div className="border rounded-md overflow-hidden">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Student ID
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Name
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Email
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {sectionStudents.map((student) => (
-                        <tr key={student._id}>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                            {student.studentId}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {student.firstName} {student.lastName}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{student.collegeEmail}</td>
+                  {/* Make table horizontally scrollable inside Dialog */}
+                  <div className="overflow-x-auto w-full max-w-[calc(100vw-4rem)]">
+                    <table className="table-auto min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                            Student ID
+                          </th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                            Name
+                          </th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                            Email
+                          </th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {sectionStudents.map((student) => (
+                          <tr key={student._id}>
+                            <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                              {student.studentId}
+                            </td>
+                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500 truncate max-w-[150px]">
+                              {student.firstName.length + student.lastName.length > 20
+                                ? `${student.firstName} ${student.lastName}`.slice(0, 20) + "..."
+                                : `${student.firstName} ${student.lastName}`}
+                            </td>
+                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500 truncate max-w-[200px]">
+                              {student.collegeEmail}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               ) : (
                 <p className="text-gray-500">No students enrolled in this section.</p>
@@ -223,6 +230,7 @@ export const FacultyOverview = (props) => {
           )}
         </DialogContent>
       </Dialog>
+
     </>
   )
 }

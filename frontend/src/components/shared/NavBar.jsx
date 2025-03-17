@@ -221,10 +221,33 @@ export const NavBar = () => {
                                         </Avatar>
                                     </div>
                                     <div>
-                                        <Badge className="bg-[#63144c]">{user && user.email.includes("admin") ? "Admin" : "Student"}</Badge>
+                                        {
+                                            user?.role === "Admin" && 
+                                            <Badge className="bg-[#63144c]">Admin</Badge>
+                                        }
+                                        {
+                                            user?.role === "Student" && 
+                                            <Badge className="bg-[#63144c]">Student</Badge>
+                                            
+                                        }
+                                        {
+                                            user?.role === "Faculty" && 
+                                            <Badge className="bg-[#63144c]">Faculty</Badge>
+                                        }
                                     </div>
                                     <div>
-                                        <Badge className="bg-[#63144c]">{user && user.email.includes("admin") ? user.institutionDomain : user.studentId}</Badge>
+                                        {
+                                            user.role == "Admin" &&
+                                            <Badge className="bg-[#63144c]">{user.institutionDomain}</Badge>
+                                        }
+                                        {
+                                            user.role == "Student" &&
+                                            <Badge className="bg-[#63144c]">{user.departmentId.name}</Badge>
+                                        }
+                                        {
+                                            user.role == "Faculty" &&
+                                            <Badge className="bg-[#63144c]">{user.departmentId.name}</Badge>
+                                        }
                                     </div>
                                 </div>
                                 <div className="flex flex-col gap-2">
@@ -232,18 +255,30 @@ export const NavBar = () => {
 
                                     <span className="bg-[#63144c] text-sm text-center p-1 rounded-[10px]">
                                         {
-                                            (user && user.email.includes("admin")) ?
+                                            (user && user.role === "Admin") ?
                                         (user.institutionName.length > 15) ? user.institutionName.substring(0, 12) + "..." : user.institutionName : 
                                         (user.departmentId.length > 15) ? user.departmentId.substring(0, 12) + "..." : user.departmentId
-                                        }
+                                        }                                        
                                     </span>
                                 </div>
                             </div>
                             <nav className="   bg-[#63144c] w-full m-auto rounded-b-2xl pt-6 text-center pb-6">
                                 <ul className="space-y-4">
                                     {
-                                        user && user.email.includes("admin") &&
+                                        user && user.role === "Admin" &&
                                         <Link to={"/admin-dashboard"}>
+                                            <li className="bg-[#1A1A1D] shadow-5xl w-[90%] m-auto  hover:bg-[#1e0b18] p-3 rounded-[2rem] cursor-pointer">Dashboard</li>
+                                        </Link>
+                                    }                                    
+                                    {
+                                        user && user.role === "Student" &&
+                                        <Link to={"/student-dashboard"}>
+                                            <li className="bg-[#1A1A1D] shadow-5xl w-[90%] m-auto  hover:bg-[#1e0b18] p-3 rounded-[2rem] cursor-pointer">Dashboard</li>
+                                        </Link>
+                                    }                                    
+                                    {
+                                        user && user.role === "Faculty" &&
+                                        <Link to={"/faculty-dashboard"}>
                                             <li className="bg-[#1A1A1D] shadow-5xl w-[90%] m-auto  hover:bg-[#1e0b18] p-3 rounded-[2rem] cursor-pointer">Dashboard</li>
                                         </Link>
                                     }                                    
@@ -293,7 +328,13 @@ export const NavBar = () => {
                                 </div>
                                 <div>
                                     {
-                                        (user && user.email.includes("admin") && <Badge className="bg-[#63144c]">Admin</Badge>) 
+                                        (user && user.role === "Admin" && <Badge className="bg-[#63144c]">Admin</Badge>) 
+                                    } 
+                                    {
+                                        (user && user.role === "Student" && <Badge className="bg-[#63144c]">Student</Badge>) 
+                                    } 
+                                    {
+                                        (user && user.role === "Faculty" && <Badge className="bg-[#63144c]">Faculty</Badge>) 
                                     } 
                                 </div>
                                 <div>
@@ -302,11 +343,7 @@ export const NavBar = () => {
                             </div>
                             <div className="flex flex-col gap-2 mt-4">
                                 <span className="bg-[#63144c] p-1 rounded-[10px] text-center">{user.firstName + " " + user.lastName}</span>
-
-                                {
-                                    user && !user.email.includes("admin") ?
-                                        <span className="bg-[#63144c] text-sm text-center p-1 rounded-[10px]">{user.departmentId.name}</span> : null
-                                }
+                                
 
                             </div>
                             <Dialog open={open} onOpenChange={setOpen}>

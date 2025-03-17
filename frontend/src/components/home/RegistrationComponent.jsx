@@ -145,7 +145,7 @@ export const RegistrationComponent = () => {
             >
               {              
                 
-                user.email.includes("admin") ?
+                (user && user.role === "Admin") && 
                   <motion.button
                     whileHover={primaryButtonHover}
                     whileTap={{ scale: 0.98 }}
@@ -153,7 +153,23 @@ export const RegistrationComponent = () => {
                     onClick={() => navigate("/admin-dashboard")}
                   >
                     Go to Dashboard
-                  </motion.button> :
+                  </motion.button> 
+
+              }
+              {
+                (user && user.role === "Student") && 
+                  <motion.button
+                    whileHover={primaryButtonHover}
+                    whileTap={{ scale: 0.98 }}
+                    className="text-xl px-8 py-4 bg-[#63144c] text-white font-bold rounded-md shadow-lg"
+                    onClick={() => navigate("/student-dashboard")}
+                  >
+                    Go to Dashboard
+                  </motion.button>
+                
+              }
+              {
+                (user && user.role === "Faculty") && 
                   <motion.button
                     whileHover={primaryButtonHover}
                     whileTap={{ scale: 0.98 }}
@@ -162,7 +178,7 @@ export const RegistrationComponent = () => {
                   >
                     Go to Dashboard
                   </motion.button>
-
+                
               }
             </motion.div>           
           </motion.div>

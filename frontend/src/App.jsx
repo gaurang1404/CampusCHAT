@@ -3,7 +3,6 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { Provider } from "react-redux";
 import store from "./redux/store"; // Import your Redux store
 import ProtectedRoute from "./components/auth/ProtectedRoute";
-import { useSelector } from "react-redux";
 
 // Lazy loading components
 const Landing = lazy(() => import("./components/home/Landing"));
@@ -13,6 +12,7 @@ const AdminDashboard = lazy(() => import("./components/admin/AdminDashboard"));
 const StudentLoginForm = lazy(() => import("./components/auth/StudentLoginForm"));
 const FacultyLoginForm = lazy(() => import("./components/auth/FacultyLoginForm"));
 const FacultyDashboard = lazy(() => import("./components/faculty/FacultyDashboard"));
+const StudentDashboard = lazy(() => import("./components/student/StudentDashboard"));
 
 const App = () => {
   return (
@@ -29,6 +29,7 @@ const App = () => {
             {/* Protected Routes */}
             <Route path="/admin-dashboard" element={<ProtectedRoute allowedRoles={["Admin"]}><AdminDashboard /></ProtectedRoute>} />
             <Route path="/faculty-dashboard" element={<ProtectedRoute allowedRoles={["Faculty"]}><FacultyDashboard /></ProtectedRoute>} />
+            <Route path="/student-dashboard" element={<ProtectedRoute allowedRoles={["Student"]}><StudentDashboard /></ProtectedRoute>} />
 
           </Routes>
         </Suspense>

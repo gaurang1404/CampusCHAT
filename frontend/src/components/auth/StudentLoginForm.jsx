@@ -120,11 +120,12 @@ const StudentLoginForm = () => {
                 email: formData.email,
                 password: formData.password,
                 rememberMe: rememberMe,
-            });            
-    
-            if (response.data.code === 200) {
+            });    
+            
+            if (response.data.code === 200) {                
                 showToast("Login successful! Redirecting to dashboard");
-    
+                console.log(response.data.data[1].student);
+                
                 // Set user in Redux Persist (automatically stored in localStorage)
                 dispatch(setUser(response.data.data[1].student));                
     
@@ -279,7 +280,6 @@ const StudentLoginForm = () => {
                                 )}
                             </button>
                         </motion.div>
-                                               
                     </form>
                 </motion.div>
             </motion.div>

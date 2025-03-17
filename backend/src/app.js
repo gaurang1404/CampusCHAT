@@ -10,6 +10,7 @@ import sectionRoutes from "./routes/section.routes.js";
 import courseRoutes from "./routes/course.routes.js";
 import studentRoutes from "./routes/student.routes.js";
 import attendanceRoutes from "./routes/attendance.routes.js";
+import marksRoutes from "./routes/marks.routes.js";
 
 
 const app = express();
@@ -31,6 +32,7 @@ app.use("/api/semester", semesterRoutes);
 app.use("/api/section", sectionRoutes);
 app.use("/api/course", courseRoutes);
 app.use("/api/attendance", attendanceRoutes);
+app.use("/api/marks", marksRoutes);
 app.use("/api/student", studentRoutes);
 
 // Connect to Database

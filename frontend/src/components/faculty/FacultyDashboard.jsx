@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { LayoutDashboard, Calendar, Home, LogOut } from "lucide-react"
+import { LayoutDashboard, Calendar, Home, LogOut, FileText } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import {
   Dialog,
@@ -19,6 +19,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import axios from "axios"
 import FacultyOverview from "./FacultyOverview"
 import AttendanceTab from "./AttendanceTab"
+import MarksTab from "./MarksTab"
 
 const apiUrl = import.meta.env.VITE_API_URL
 
@@ -117,7 +118,6 @@ const FacultyDashboard = () => {
   return (
     <div className="w-full ">
       <div className="bg-[#63144c]">
-
         <div className=" max-w-[1200px] m-auto">
           <motion.header
             className="w-full mb-6 pt-10 pb-6 pl-4 flex justify-between items-center"
@@ -140,7 +140,7 @@ const FacultyDashboard = () => {
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.4, duration: 0.5 }}
               >
-                Manage your courses, students, and attendance
+                Manage your courses, students, attendance and marks
               </motion.p>
             </div>
             <div className="flex gap-3 pr-4 flex-wrap">
@@ -189,10 +189,11 @@ const FacultyDashboard = () => {
       <div className="p-4 max-w-[1200px] mx-auto">
         <Tabs defaultValue="dashboard" value={activeTab} onValueChange={setActiveTab} className="w-full">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-            <TabsList className="grid grid-cols-2 mb-4">
+            <TabsList className="grid grid-cols-3 mb-4">
               {[
                 { value: "dashboard", icon: <LayoutDashboard className="h-4 w-4" />, label: "Dashboard" },
                 { value: "attendance", icon: <Calendar className="h-4 w-4" />, label: "Attendance" },
+                { value: "marks", icon: <FileText className="h-4 w-4" />, label: "Marks" },
               ].map((tab, index) => (
                 <motion.div
                   key={tab.value}
@@ -257,6 +258,16 @@ const FacultyDashboard = () => {
                   </div>
                 ) : (
                   <AttendanceTab facultyData={facultyData} mySections={mySections} />
+                )}
+              </TabsContent>
+
+              <TabsContent value="marks">
+                {loading ? (
+                  <div className="flex justify-center items-center h-64">
+                    <p>Loading marks data...</p>
+                  </div>
+                ) : (
+                  <MarksTab facultyData={facultyData} mySections={mySections} />
                 )}
               </TabsContent>
             </motion.div>

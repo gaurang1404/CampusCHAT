@@ -61,7 +61,7 @@ export const NavBar = () => {
       title: "Attendance & Marks Management",
       description: "Automates attendance tracking, marks entry, and report generation for academic performance analysis.",
     },
-];
+  ];
 
   return (
     <div
@@ -127,19 +127,19 @@ export const NavBar = () => {
                 </NavigationMenuContent>
               </NavigationMenuItem>
               <NavigationMenuItem className="hidden sm:block">
-  <NavigationMenuTrigger className="text-white px-4 py-2  transition [&>svg]:text-white bg-white/10 hover:bg-white/20">
-    <span className="text-white text-[15px]">Campus Portal</span>
-  </NavigationMenuTrigger>
-  <NavigationMenuContent className="bg-[#63144c] text-white p-4">
-    <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px]">
-      {collegeERP.map((item) => (
-        <ListItem className="hover:bg-[#37102d]" key={item.title} title={item.title}>
-          {item.description}
-        </ListItem>
-      ))}
-    </ul>
-  </NavigationMenuContent>
-</NavigationMenuItem>
+                <NavigationMenuTrigger className="text-white px-4 py-2  transition [&>svg]:text-white bg-white/10 hover:bg-white/20">
+                  <span className="text-white text-[15px]">Campus Portal</span>
+                </NavigationMenuTrigger>
+                <NavigationMenuContent className="bg-[#63144c] text-white p-4">
+                  <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px]">
+                    {collegeERP.map((item) => (
+                      <ListItem className="hover:bg-[#37102d]" key={item.title} title={item.title}>
+                        {item.description}
+                      </ListItem>
+                    ))}
+                  </ul>
+                </NavigationMenuContent>
+              </NavigationMenuItem>
 
               {user && (
                 <NavigationMenuItem className="hidden sm:flex justify-center items-center">

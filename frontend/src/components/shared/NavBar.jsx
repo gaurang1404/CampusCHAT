@@ -44,29 +44,24 @@ export const NavBar = () => {
     dispatch(logout())
   }
 
-  const components = [
+  const collegeERP = [
     {
-      title: "Alert Dialog",
-      href: "/docs/primitives/alert-dialog",
-      description: "A modal dialog that interrupts the user with important content and expects a response.",
+      title: "Admin & Department Management",
+      description: "Handles the structure of the institution, including department creation, role assignments, and administrative controls.",
     },
     {
-      title: "Hover Card",
-      href: "/docs/primitives/hover-card",
-      description: "For sighted users to preview content available behind a link.",
+      title: "Semester & Course Management",
+      description: "Manages academic sessions, course registrations, syllabus distribution, and scheduling.",
     },
     {
-      title: "Progress",
-      href: "/docs/primitives/progress",
-      description:
-        "Displays an indicator showing the completion progress of a task, typically displayed as a progress bar.",
+      title: "Faculty & Student Management",
+      description: "Maintains faculty profiles, student records, and role-based access to information and resources.",
     },
     {
-      title: "Scroll-area",
-      href: "/docs/primitives/scroll-area",
-      description: "Visually or semantically separates content.",
+      title: "Attendance & Marks Management",
+      description: "Automates attendance tracking, marks entry, and report generation for academic performance analysis.",
     },
-  ]
+];
 
   return (
     <div
@@ -132,19 +127,19 @@ export const NavBar = () => {
                 </NavigationMenuContent>
               </NavigationMenuItem>
               <NavigationMenuItem className="hidden sm:block">
-                <NavigationMenuTrigger className="text-white px-4 py-2  transition [&>svg]:text-white bg-white/10 hover:bg-white/20">
-                  <span className="text-white text-[15px]">Components</span>
-                </NavigationMenuTrigger>
-                <NavigationMenuContent className="bg-[#63144c] text-white p-4">
-                  <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px]">
-                    {components.map((component) => (
-                      <ListItem className="hover:bg-[#37102d]" key={component.title} title={component.title}>
-                        {component.description}
-                      </ListItem>
-                    ))}
-                  </ul>
-                </NavigationMenuContent>
-              </NavigationMenuItem>
+  <NavigationMenuTrigger className="text-white px-4 py-2  transition [&>svg]:text-white bg-white/10 hover:bg-white/20">
+    <span className="text-white text-[15px]">Campus Portal</span>
+  </NavigationMenuTrigger>
+  <NavigationMenuContent className="bg-[#63144c] text-white p-4">
+    <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px]">
+      {collegeERP.map((item) => (
+        <ListItem className="hover:bg-[#37102d]" key={item.title} title={item.title}>
+          {item.description}
+        </ListItem>
+      ))}
+    </ul>
+  </NavigationMenuContent>
+</NavigationMenuItem>
 
               {user && (
                 <NavigationMenuItem className="hidden sm:flex justify-center items-center">

@@ -125,22 +125,15 @@ const AdminLoginForm = () => {
             
     
             if (response.data.code === 200) {
-                showToast("Login successful! Redirecting to dashboard");
-                console.log(response.data.data[1].admin);
+                showToast("Login successful! Redirecting to dashboard");                
                 
                 // Set user in Redux Persist (automatically stored in localStorage)
                 dispatch(setUser(response.data.data[1].admin));                
-
-                console.log(response.data.data[1].admin);
+                
                 
     
                 // Set Authorization header for future requests
                 localStorage.setItem("token", response.data.data[0].token);
-
-                console.log(response.data.data[0].token);
-                
-
-                console.log(response.data.data[1].admin);
                 
                 // Redirect to dashboard
                 setTimeout(() => {

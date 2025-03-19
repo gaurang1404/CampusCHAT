@@ -1,9 +1,11 @@
+"use client"
+
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
-import { Book, Calendar, GraduationCap, Users, Clock, Award, TrendingUp } from "lucide-react"
+import { Book, Calendar, GraduationCap, Users, Clock, Award, TrendingUp, BarChart2 } from "lucide-react"
 import {
   PieChart,
   Pie,
@@ -16,8 +18,10 @@ import {
   CartesianGrid,
   Tooltip,
   Legend,
+  LineChart,
+  Line,
 } from "recharts"
-import { fetchOverviewData, fetchCourseProgress } from "./student-api.js"
+import { fetchOverviewData, fetchCourseProgress, fetchComparisonData } from "./student-api.js"
 import { toast } from "sonner"
 import { useSelector } from "react-redux"
 
@@ -28,6 +32,7 @@ const StudentOverview = ({ studentData }) => {
   const [loading, setLoading] = useState(true)
   const [overviewData, setOverviewData] = useState(null)
   const [courseProgress, setCourseProgress] = useState([])
+  const [comparisonData, setComparisonData] = useState([])
   const [animateCharts, setAnimateCharts] = useState(false)
   const { user } = useSelector((state) => state.auth)
 
@@ -35,13 +40,18 @@ const StudentOverview = ({ studentData }) => {
     const fetchData = async () => {
       try {
         setLoading(true)
-        console.log(studentData);
-        
+
         const overview = await fetchOverviewData(studentData._id)
         setOverviewData(overview)
 
         const progress = await fetchCourseProgress(studentData._id)
         setCourseProgress(progress)
+
+        // Fetch comparison data
+        if (studentData.sectionId && studentData.semesterId) {
+          const comparison = await fetchComparisonData(studentData._id, studentData.sectionId, studentData.semesterId)
+          setComparisonData(comparison)
+        }
       } catch (error) {
         console.error("Error fetching overview data:", error)
         toast({
@@ -216,7 +226,7 @@ const StudentOverview = ({ studentData }) => {
       </div>
 
       {/* Middle Row - Charts */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6">
         <motion.div variants={itemVariants}>
           <Card className="border-none shadow-md hover:shadow-lg transition-shadow h-full">
             <CardHeader>
@@ -227,7 +237,7 @@ const StudentOverview = ({ studentData }) => {
               <CardDescription>Overall grade distribution across courses</CardDescription>
             </CardHeader>
             <CardContent className="pt-2">
-              <div className="h-[300px]">
+              <div className="h-[300px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
                     data={overviewData?.gradeDistribution || []}
@@ -240,7 +250,7 @@ const StudentOverview = ({ studentData }) => {
                     <Legend />
                     <Bar
                       dataKey="count"
-                      name="Number of Courses"
+                      name="Number of Tests"
                       fill="#4f46e5"
                       animationBegin={0}
                       animationDuration={1500}
@@ -263,7 +273,7 @@ const StudentOverview = ({ studentData }) => {
               <CardDescription>Your attendance record this semester</CardDescription>
             </CardHeader>
             <CardContent className="pt-2">
-              <div className="h-[300px] flex items-center justify-center">
+              <div className="h-[300px] flex items-center justify-center w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
@@ -291,6 +301,57 @@ const StudentOverview = ({ studentData }) => {
           </Card>
         </motion.div>
       </div>
+
+      {/* New Row - Performance Comparison */}
+      <motion.div variants={itemVariants}>
+        <Card className="border-none shadow-md hover:shadow-lg transition-shadow">
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <BarChart2 className="mr-2 h-5 w-5 text-indigo-500" />
+              Performance Comparison
+            </CardTitle>
+            <CardDescription>Your performance compared to section average</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[350px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={comparisonData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="courseName" />
+                  <YAxis domain={[0, 100]} />
+                  <Tooltip />
+                  <Legend />
+                  <Bar
+                    dataKey="yourScore"
+                    name="Your Score"
+                    fill="#4f46e5"
+                    animationBegin={0}
+                    animationDuration={1500}
+                    animationEasing="ease-out"
+                  />
+                  <Bar
+                    dataKey="sectionAverage"
+                    name="Section Average"
+                    fill="#10b981"
+                    animationBegin={0}
+                    animationDuration={1500}
+                    animationEasing="ease-out"
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-md">
+              <h3 className="font-medium text-blue-800 mb-2">Performance Insights</h3>
+              <p className="text-sm text-blue-700">
+                {comparisonData.filter((item) => item.yourScore > item.sectionAverage).length >
+                comparisonData.filter((item) => item.yourScore < item.sectionAverage).length
+                  ? "You're performing above the section average in most courses. Keep up the good work!"
+                  : "You have opportunities to improve in some courses where you're below the section average."}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
 
       {/* Bottom Row - Course Progress */}
       <motion.div variants={itemVariants}>
@@ -327,6 +388,55 @@ const StudentOverview = ({ studentData }) => {
                   />
                 </motion.div>
               ))}
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* Trend Comparison Chart */}
+      <motion.div variants={itemVariants}>
+        <Card className="border-none shadow-md hover:shadow-lg transition-shadow">
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <TrendingUp className="mr-2 h-5 w-5 text-orange-500" />
+              Performance Trends
+            </CardTitle>
+            <CardDescription>Your performance trend compared to section average</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[300px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart
+                  data={comparisonData.length > 0 ? comparisonData[0]?.trendData || [] : []}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="examName" />
+                  <YAxis domain={[0, 100]} />
+                  <Tooltip />
+                  <Legend />
+                  <Line
+                    type="monotone"
+                    dataKey="yourScore"
+                    name="Your Score"
+                    stroke="#4f46e5"
+                    strokeWidth={2}
+                    dot={{ r: 4 }}
+                    activeDot={{ r: 6 }}
+                    isAnimationActive={animateCharts}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="sectionAverage"
+                    name="Section Average"
+                    stroke="#10b981"
+                    strokeWidth={2}
+                    dot={{ r: 4 }}
+                    activeDot={{ r: 6 }}
+                    isAnimationActive={animateCharts}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
             </div>
           </CardContent>
         </Card>

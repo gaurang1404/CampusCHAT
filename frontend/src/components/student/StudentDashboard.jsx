@@ -18,13 +18,15 @@ import AttendanceTab from "./AttendanceTab"
 import MarksTab from "./MarksTab"
 import { fetchStudentData } from "./student-api"
 import { useNavigate } from "react-router-dom"
-import { useSelector } from "react-redux"
+import { useDispatch, useSelector } from "react-redux"
+import { logout } from "@/redux/authSlice";
 
 const StudentDashboard = () => {
   const [open, setOpen] = useState(false)
   const [activeTab, setActiveTab] = useState("overview")
   const [loading, setLoading] = useState(true)
-  const [studentData, setStudentData] = useState(null)  
+  const [studentData, setStudentData] = useState(null)
+  const dispatch = useDispatch();
   const navigate = useNavigate();
   const { user } = useSelector((state) => state.auth)
 
@@ -85,7 +87,10 @@ const StudentDashboard = () => {
     // Clear auth tokens
     localStorage.removeItem("token");
     localStorage.removeItem("studentId");
-    navigate("/login"); // Replaces router.push("/login")
+
+    dispatch(logout());
+
+    navigate("/student-login"); // Replaces router.push("/login")
   };
 
   if (loading) {
@@ -114,7 +119,7 @@ const StudentDashboard = () => {
 
   return (
     <div className="w-full min-h-screen bg-gray-50">
-      <div className="bg-gradient-to-r from-blue-600 to-indigo-700">
+      <div className="bg-[#63144c]">
         <div className="max-w-[1200px] m-auto">
           <motion.header
             className="w-full mb-6 pt-10 pb-6 pl-4 flex justify-between items-center"
@@ -141,15 +146,9 @@ const StudentDashboard = () => {
               </motion.p>
             </div>
             <div className="flex gap-3 pr-4 flex-wrap items-center">
-              <Avatar className="h-10 w-10 border-2 border-white">
-                <AvatarImage src="/placeholder-user.jpg" alt={`${studentData.firstName} ${studentData.lastName}`} />
-                <AvatarFallback className="bg-blue-800 text-white">
-                  {studentData.firstName[0]}{studentData.lastName[0]}
-                </AvatarFallback>
-              </Avatar>
               <motion.button
                 onClick={handleHomeClick}
-                className="bg-white text-blue-700 hover:bg-gray-100 px-4 py-2 rounded-md flex items-center gap-2 font-medium"
+                className="bg-white text-black hover:bg-gray-100 px-4 py-2 rounded-md flex items-center gap-2 font-medium"
                 variants={buttonVariants}
                 whileHover="hover"
                 whileTap="tap"
@@ -190,16 +189,16 @@ const StudentDashboard = () => {
       </div>
 
       <div className="p-4 max-w-[1200px] mx-auto -mt-6">
-        <motion.div 
+        <motion.div
           className="bg-white rounded-lg shadow-xl overflow-hidden"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
           <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }} 
-              animate={{ opacity: 1, y: 0 }} 
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
               className="border-b"
             >
@@ -216,8 +215,8 @@ const StudentDashboard = () => {
                     transition={{ delay: index * 0.05, duration: 0.3 }}
                     className="flex justify-center"
                   >
-                    <TabsTrigger 
-                      value={tab.value} 
+                    <TabsTrigger
+                      value={tab.value}
                       className="flex gap-2 py-4 px-6 data-[state=active]:border-b-2 data-[state=active]:border-blue-600 data-[state=active]:shadow-none rounded-none bg-transparent text-gray-600 data-[state=active]:text-blue-600 font-medium"
                     >
                       <span>{tab.icon}</span>

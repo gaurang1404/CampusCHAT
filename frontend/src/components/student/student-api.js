@@ -1,5 +1,5 @@
 import axios from "axios"
-const apiUrl = import.meta.env.VITE_API_URL;
+const apiUrl = import.meta.env.VITE_API_URL
 
 // Set up axios instance with auth token
 const api = axios.create({
@@ -24,7 +24,7 @@ api.interceptors.request.use(
 // Main student data
 export const fetchStudentData = async (studentId) => {
   try {
-    const response = await api.get(`/api/student/${studentId}`)
+    const response = await api.get(`/api/student/get/${studentId}`)        
     return response.data.data.student
   } catch (error) {
     console.error("Error fetching student data:", error)
@@ -35,7 +35,7 @@ export const fetchStudentData = async (studentId) => {
 // Overview tab data
 export const fetchOverviewData = async (studentId) => {
   try {
-    const response = await api.get(`/api/student/${studentId}/overview`)
+    const response = await api.get(`/api/student/${studentId}/overview`)        
     return response.data.data
   } catch (error) {
     console.error("Error fetching overview data:", error)
@@ -49,6 +49,20 @@ export const fetchCourseProgress = async (studentId) => {
     return response.data.data.courses
   } catch (error) {
     console.error("Error fetching course progress:", error)
+    throw error
+  }
+}
+
+// New endpoint for comparison data
+export const fetchComparisonData = async (studentId, sectionId, semesterId) => {
+  try {    
+    
+    const response = await api.get(
+      `/api/student/${studentId}/comparison?sectionId=${sectionId._id}&semesterId=${semesterId._id}`,
+    )
+    return response.data.data.comparison
+  } catch (error) {
+    console.error("Error fetching comparison data:", error)
     throw error
   }
 }
@@ -67,7 +81,10 @@ export const fetchAttendanceData = async (studentId) => {
 export const fetchAttendanceByDate = async (studentId, date) => {
   try {
     const response = await api.get(`/api/student/${studentId}/attendance/date/${date}`)
-    return response.data.data.attendance
+    // Ensure we return an array of attendance records
+    const attendanceData = response.data.data.attendance    
+    
+    return Array.isArray(attendanceData) ? attendanceData : [attendanceData].filter(Boolean)
   } catch (error) {
     console.error("Error fetching attendance by date:", error)
     throw error
@@ -97,7 +114,8 @@ export const fetchMonthlyAttendance = async (studentId) => {
 // Marks tab data
 export const fetchMarksData = async (studentId) => {
   try {
-    const response = await api.get(`/api/student/${studentId}/marks`)
+    const response = await api.get(`/api/student/${studentId}/marks`)    
+    
     return response.data.data
   } catch (error) {
     console.error("Error fetching marks data:", error)
@@ -108,6 +126,7 @@ export const fetchMarksData = async (studentId) => {
 export const fetchCourseMarks = async (studentId) => {
   try {
     const response = await api.get(`/api/student/${studentId}/marks/courses`)
+    
     return response.data.data.courses
   } catch (error) {
     console.error("Error fetching course marks:", error)
@@ -117,7 +136,8 @@ export const fetchCourseMarks = async (studentId) => {
 
 export const fetchSemesterProgress = async (studentId) => {
   try {
-    const response = await api.get(`/api/student/${studentId}/marks/progress`)
+    const response = await api.get(`/api/student/${studentId}/marks/progress`)    
+    
     return response.data.data.progress
   } catch (error) {
     console.error("Error fetching semester progress:", error)

@@ -123,8 +123,7 @@ const StudentLoginForm = () => {
             });    
             
             if (response.data.code === 200) {                
-                showToast("Login successful! Redirecting to dashboard");
-                console.log(response.data.data[1].student);
+                showToast("Login successful! Redirecting to dashboard");                
                 
                 // Set user in Redux Persist (automatically stored in localStorage)
                 dispatch(setUser(response.data.data[1].student));                

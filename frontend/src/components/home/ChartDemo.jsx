@@ -1,3 +1,5 @@
+"use client"
+
 import { useEffect } from "react"
 import { motion, useAnimation } from "framer-motion"
 import { useInView } from "react-intersection-observer"
@@ -67,16 +69,21 @@ export const ChartDemo = () => {
   }
 
   return (
-    <div id="dashboard" className="w-full bg-[#63144c] pt-6 pb-[10rem]">
+    <div id="dashboard" className="w-full bg-gradient-to-b from-[#63144c] to-[#4a0f39] pt-12 pb-[10rem]">
       <motion.div
         ref={headingRef}
         initial="hidden"
         animate={headingControls}
         variants={headingVariants}
-        className="lg:max-w-[1200px] m-auto flex justify-evenly lg:justify-between items-center mt-20 flex-wrap"
+        className="lg:max-w-[1200px] m-auto flex justify-evenly lg:justify-between items-center mt-12 flex-wrap px-6"
       >
-        <div className="pl-10 lg:p-5">
-          <span className="text-5xl text-white font-extrabold">Try our interactive dashboard features!</span>
+        <div className="pl-4 lg:p-5 max-w-3xl mx-auto text-center lg:text-left">
+          <span className="text-4xl md:text-5xl text-white font-extrabold leading-tight">
+            Try our interactive dashboard features!
+          </span>
+          <p className="text-white/80 mt-4 text-lg max-w-2xl mx-auto lg:mx-0">
+            Visualize your campus data with our powerful analytics tools
+          </p>
         </div>
       </motion.div>
 
@@ -85,17 +92,17 @@ export const ChartDemo = () => {
         initial="hidden"
         animate={chartControls}
         variants={chartContainerVariants}
-        className="lg:max-w-[1200px] m-auto flex justify-evenly lg:justify-between items-center mt-20 flex-wrap"
+        className="lg:max-w-[1200px] m-auto flex justify-evenly lg:justify-between items-stretch mt-16 flex-wrap px-6 gap-8"
       >
-        <motion.div variants={chartItemVariants} className="w-full sm:w-[45%] lg:w-[30%] p-2 m-7  sm:m-0">
+        <motion.div variants={chartItemVariants} className="w-full sm:w-[45%] lg:w-[30%] p-2">
           <AreaChartComponent />
         </motion.div>
 
-        <motion.div variants={chartItemVariants} className="w-full sm:w-[45%] lg:w-[30%] p-2 m-7 sm:m-0">
+        <motion.div variants={chartItemVariants} className="w-full sm:w-[45%] lg:w-[30%] p-2">
           <PieChartComponent />
         </motion.div>
 
-        <motion.div variants={chartItemVariants} className="w-full sm:w-[45%] lg:w-[30%] p-2 m-7 sm:m-0">
+        <motion.div variants={chartItemVariants} className="w-full sm:w-[45%] lg:w-[30%] p-2">
           <LineChartComponent />
         </motion.div>
       </motion.div>

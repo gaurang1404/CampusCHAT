@@ -209,9 +209,7 @@ const AttendanceTab = ({ facultyData, mySections }) => {
 
       const courseId = courseFacultyMapping.courseId._id
       const facultyId = facultyData._id
-      const formattedDate = format(attendanceDate, "yyyy-MM-dd")
-
-      console.log(formattedDate);
+      const formattedDate = format(attendanceDate, "yyyy-MM-dd")      
 
 
       // If we're creating new attendance (not editing), check if attendance already exists for this day
@@ -261,12 +259,8 @@ const AttendanceTab = ({ facultyData, mySections }) => {
         endpoint = `${apiUrl}/api/attendance/bulk-mark`
       }
 
-      console.log("Sending payload:", payload)
-      console.log("To endpoint:", endpoint)
-
       const response = await axios.post(endpoint, payload, config)
-
-      console.log(response)
+      
 
       if (response.status === 200) {
         toast.success(isEditing ? "Attendance updated successfully." : "Attendance saved successfully.")

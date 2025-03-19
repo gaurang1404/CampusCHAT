@@ -16,6 +16,7 @@ import {
   getStudentMarks,
   getCourseMarks,
   getSemesterProgress,
+  getComparisonData,
 } from "../controllers/student.controller.js";
 import { authenticateJWT } from "../middlewares/auth.middleware.js";
 import { rateLimiter } from "../middlewares/rate.middleware.js";
@@ -40,7 +41,7 @@ router.put("/:id", authenticateJWT, updateStudent);
 router.delete("/:id", authenticateJWT, deleteStudent);
 
 
-router.get("/:id", getStudentData)
+router.get("/get/:id", getStudentData)
 
 // Overview tab
 router.get("/:id/overview", getStudentOverview)
@@ -56,5 +57,6 @@ router.get("/:id/attendance/monthly", getMonthlyAttendance)
 router.get("/:id/marks", getStudentMarks)
 router.get("/:id/marks/courses", getCourseMarks)
 router.get("/:id/marks/progress", getSemesterProgress)
+router.get("/:id/comparison", getComparisonData) 
 
 export default router;

@@ -7,8 +7,7 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    console.log(allowedRoles);
-    console.log(user.role);
+
     
     if (!user) {
       navigate("/admin-login", { replace: true }); // Redirect if not logged in

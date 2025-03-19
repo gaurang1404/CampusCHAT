@@ -1,10 +1,12 @@
+"use client"
+
 import { motion } from "framer-motion"
 import { TypeAnimation } from "react-type-animation"
 
 export default function Hero() {
   return (
-    <div className="bg-white">
-      <section className="relative lg:max-w-[1200px] m-auto text-[#3B1C32] py-20">
+    <div className="bg-gradient-to-b from-white to-gray-50">
+      <section className="relative lg:max-w-[1200px] m-auto text-[#3B1C32] py-24">
         <div className="container mx-auto px-6 lg:px-12 flex flex-col lg:flex-row items-center justify-between">
           {/* Left Content */}
           <motion.div
@@ -19,28 +21,32 @@ export default function Hero() {
               animate={{ opacity: 1 }}
               transition={{ duration: 0.8, delay: 0.2 }}
             >
-              Welcome to <span className="text-[#63144c]">CampusCHAT</span>
+              Welcome to{" "}
+              <span className="text-[#63144c] relative">
+                CampusCHAT
+                <span className="absolute bottom-0 left-0 w-full h-1 bg-[#63144c] opacity-30 rounded-full"></span>
+              </span>
             </motion.h1>
-            <div className="mt-4 text-lg lg:text-xl text-black h-20 sm:h-16 mb-12">
+            <div className="mt-4 text-lg lg:text-xl text-gray-700 h-20 sm:h-16 mb-12">
               <TypeAnimation
                 sequence={[
-                  "Your AI-powered Campus Assistant. Stay connected, informed, and productive like never before.",
+                  "Your campus management portal. Stay connected, informed, and productive like never before.",
                   1000,
                 ]}
                 wrapper="p"
                 speed={80}
                 repeat={1}
-                className="mt-4 text-lg lg:text-xl text-black"
+                className="mt-4 text-lg lg:text-xl"
               />
             </div>
             <motion.div
-              className="mt-6 flex flex-col sm:flex-row sm:justify-center lg:justify-start sm:items-center gap-4 sm:gap-2"
+              className="mt-8 flex flex-col sm:flex-row sm:justify-center lg:justify-start sm:items-center gap-4 sm:gap-4"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.6 }}
             >
               <motion.button
-                className="text-white bg-[#63144c] hover:bg-[#5c0c45] font-semibold py-3 px-6 rounded-lg shadow-md transition duration-300"
+                className="text-white bg-[#63144c] hover:bg-[#5c0c45] font-semibold py-3 px-8 rounded-lg shadow-lg transition duration-300 flex items-center justify-center"
                 onClick={() => {
                   document.getElementById("getstarted")?.scrollIntoView({ behavior: "smooth" })
                 }}
@@ -51,7 +57,7 @@ export default function Hero() {
               </motion.button>
 
               <motion.button
-                className="sm:ml-4 border-2 border-black text-[#63144c] font-semibold py-3 px-6 rounded-lg hover:bg-gray-100 transition duration-300"
+                className="sm:ml-4 border-2 border-[#63144c] text-[#63144c] font-semibold py-3 px-8 rounded-lg hover:bg-gray-50 transition duration-300 flex items-center justify-center"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
@@ -69,8 +75,8 @@ export default function Hero() {
           >
             <motion.img
               src="/Homepage.png"
-              alt="AI-powered CampusCHAT"
-              className="w-[500px] rounded-lg bg-transparent shadow-2xl"
+              alt="CampusCHAT Dashboard"
+              className="w-[500px] rounded-2xl bg-transparent shadow-2xl border border-gray-100"
               initial={{ y: 20 }}
               animate={{ y: 0 }}
               transition={{
@@ -86,3 +92,4 @@ export default function Hero() {
     </div>
   )
 }
+

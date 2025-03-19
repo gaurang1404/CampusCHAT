@@ -1,6 +1,8 @@
+"use client"
+
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
-import { format } from "date-fns"
+import { format, isWithinInterval } from "date-fns"
 import { ChevronLeft, ChevronRight, Check, X, AlertCircle } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Calendar } from "@/components/ui/calendar"
@@ -45,9 +47,20 @@ const AttendanceTab = ({ studentData }) => {
   const [courseWiseAttendance, setCourseWiseAttendance] = useState([])
   const [monthlyAttendance, setMonthlyAttendance] = useState([])
   const [dailyAttendance, setDailyAttendance] = useState([])
-  const [selectedDateAttendance, setSelectedDateAttendance] = useState(null)
+  const [selectedDateAttendance, setSelectedDateAttendance] = useState([])
+  const [semesterStartDate, setSemesterStartDate] = useState(null)
+  const [semesterEndDate, setSemesterEndDate] = useState(null)
 
   useEffect(() => {
+    // Set semester date range if available    
+    if (studentData?.semesterId?.startDate) {
+      
+      setSemesterStartDate(new Date(studentData.semesterId.startDate))
+    }
+    if (studentData?.semesterId?.endDate) {
+      setSemesterEndDate(new Date(studentData.semesterId.endDate))
+    }
+
     const fetchData = async () => {
       try {
         setLoading(true)
@@ -93,15 +106,40 @@ const AttendanceTab = ({ studentData }) => {
       try {
         const formattedDate = format(selectedDate, "yyyy-MM-dd")
         const data = await fetchAttendanceByDate(studentData._id, formattedDate)
-        setSelectedDateAttendance(data)
+        // Ensure data is always an array
+        setSelectedDateAttendance(Array.isArray(data) ? data : [data].filter(Boolean))        
+        
       } catch (error) {
         console.error("Error fetching attendance for date:", error)
-        setSelectedDateAttendance(null)
+        setSelectedDateAttendance([])
       }
     }
 
     getAttendanceForDate()
   }, [selectedDate, studentData])
+
+  // Custom calendar day renderer to improve visibility
+  const renderDay = (day, modifiers) => {
+    const isPresent = modifiers.present
+    const isAbsent = modifiers.absent
+    const isSelected = modifiers.selected
+
+    return (
+      <div className="relative w-full h-full flex items-center justify-center">
+        <div
+          className={`
+          w-9 h-9 flex items-center justify-center rounded-full
+          ${isPresent ? "bg-green-500 text-white font-medium" : ""}
+          ${isAbsent ? "bg-red-500 text-white font-medium" : ""}
+          ${isSelected ? "bg-blue-600 text-white font-medium" : ""}
+          ${!isPresent && !isAbsent && !isSelected ? "hover:bg-gray-200" : ""}
+        `}
+        >
+          {day.getDate()}
+        </div>
+      </div>
+    )
+  }
 
   // Prepare data for pie chart
   const pieChartData = attendanceData
@@ -125,6 +163,12 @@ const AttendanceTab = ({ studentData }) => {
   const itemVariants = {
     hidden: { opacity: 0, y: 20 },
     visible: { opacity: 1, y: 0 },
+  }
+
+  // Function to check if a date is within semester range
+  const isDateInSemester = (date) => {
+    if (!semesterStartDate || !semesterEndDate) return true
+    return isWithinInterval(date, { start: semesterStartDate, end: semesterEndDate })
   }
 
   if (loading) {
@@ -156,7 +200,7 @@ const AttendanceTab = ({ studentData }) => {
                     Present: {attendanceData?.present || 0} days | Absent: {attendanceData?.absent || 0} days
                   </p>
                 </div>
-                <div className="h-24 w-24">
+                <div className="h-24 w-24 min-w-[96px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
@@ -189,7 +233,7 @@ const AttendanceTab = ({ studentData }) => {
           </Card>
         </motion.div>
 
-        {courseWiseAttendance.slice(0, 2).map((course, index) => (
+        {courseWiseAttendance.map((course, index) => (
           <motion.div key={course.name} variants={itemVariants}>
             <Card className="border-none shadow-md hover:shadow-lg transition-shadow h-full">
               <CardHeader className="pb-2">
@@ -202,7 +246,9 @@ const AttendanceTab = ({ studentData }) => {
                   Present: {course.present} | Absent: {course.absent}
                 </p>
                 <div className="mt-2">
-                  <Badge variant={course.percentage >= 75 ? "success" : "destructive"}>
+                  <Badge 
+                  className={course.percentage >= 75 ? "bg-green-500" : "bg-red-600" + "border-none"}
+                  variant={course.percentage >= 75 ? "success" : "destructive"}>
                     {course.percentage >= 75 ? "Good Standing" : "Attendance Warning"}
                   </Badge>
                 </div>
@@ -215,7 +261,7 @@ const AttendanceTab = ({ studentData }) => {
       {/* Attendance View Tabs */}
       <motion.div variants={itemVariants}>
         <Tabs defaultValue="calendar" value={attendanceView} onValueChange={setAttendanceView} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-4">
+          <TabsList className="grid w-full grid-cols-3 mb-4 overflow-x-auto">
             <TabsTrigger value="calendar">Calendar View</TabsTrigger>
             <TabsTrigger value="courses">Course-wise</TabsTrigger>
             <TabsTrigger value="trends">Trends</TabsTrigger>
@@ -265,17 +311,22 @@ const AttendanceTab = ({ studentData }) => {
                           .map((day) => new Date(day.date)),
                       }}
                       modifiersClassNames={{
-                        present: "bg-green-100 text-green-900 font-medium",
-                        absent: "bg-red-100 text-red-900 font-medium",
+                        present: "bg-green-500 hover:text-white hover:bg-green-800 text-white font-medium",
+                        absent: "bg-red-500 hover:text-white hover:bg-red-800 text-white font-medium",
+                        selected: "bg-yellow-600 hover:text-white hover:bg-yellow-800 text-white font-medium",
                       }}
+                      disabled={(date) => !isDateInSemester(date)}
+                      fromDate={semesterStartDate}
+                      toDate={semesterEndDate}
+                      renderDay={renderDay}
                     />
                     <div className="mt-4 flex items-center justify-center gap-4 text-sm">
                       <div className="flex items-center">
-                        <div className="h-3 w-3 rounded-full bg-green-100 mr-2"></div>
+                        <div className="h-4 w-4 rounded-full bg-green-500 mr-2"></div>
                         <span>Present</span>
                       </div>
                       <div className="flex items-center">
-                        <div className="h-3 w-3 rounded-full bg-red-100 mr-2"></div>
+                        <div className="h-4 w-4 rounded-full bg-red-500 mr-2"></div>
                         <span>Absent</span>
                       </div>
                     </div>
@@ -285,33 +336,37 @@ const AttendanceTab = ({ studentData }) => {
                     {selectedDate ? (
                       <div className="border rounded-lg p-4 h-full">
                         <h3 className="text-lg font-semibold mb-4">{format(selectedDate, "EEEE, MMMM d, yyyy")}</h3>
-                        {selectedDateAttendance ? (
+                        {selectedDateAttendance && selectedDateAttendance.length > 0 ? (
                           <div className="space-y-4">
-                            <div className="flex items-center">
-                              <div className="font-medium w-24">Status:</div>
-                              <Badge
-                                variant={selectedDateAttendance.status === "Present" ? "success" : "destructive"}
-                                className="flex items-center"
-                              >
-                                {selectedDateAttendance.status === "Present" ? (
-                                  <>
-                                    <Check className="h-3 w-3 mr-1" /> Present
-                                  </>
-                                ) : (
-                                  <>
-                                    <X className="h-3 w-3 mr-1" /> Absent
-                                  </>
-                                )}
-                              </Badge>
-                            </div>
-                            <div className="flex items-center">
-                              <div className="font-medium w-24">Course:</div>
-                              <span>{selectedDateAttendance.course}</span>
-                            </div>
+                            {selectedDateAttendance.map((attendance, index) => (
+                              <div key={index} className="border-b pb-3 last:border-b-0 last:pb-0">
+                                <div className="flex items-center mb-2">
+                                  <div className="font-medium w-24">Course:</div>
+                                  <span>{attendance.course}</span>
+                                </div>
+                                <div className="flex items-center">
+                                  <div className="font-medium w-24">Status:</div>
+                                  <Badge
+                                    variant={attendance.status === "Present" ? "success" : "destructive"}
+                                    className="flex items-center bg-[#63144c] text-white hover:text-white hover:bg-[#53033c]"
+                                  >
+                                    {attendance.status === "Present" ? (
+                                      <>
+                                        <Check className="h-3 w-3 mr-1" /> Present
+                                      </>
+                                    ) : (
+                                      <>
+                                        <X className="h-3 w-3 mr-1" /> Absent
+                                      </>
+                                    )}
+                                  </Badge>
+                                </div>
+                              </div>
+                            ))}
                           </div>
                         ) : (
                           <div className="flex items-center justify-center h-32 text-muted-foreground">
-                            No attendance record for this date
+                            No attendance records for this date
                           </div>
                         )}
                       </div>

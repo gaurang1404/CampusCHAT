@@ -244,7 +244,7 @@ export const loginStudent = async (req, res) => {
 // Get All Students
 export const getStudents = async (req, res) => {
   try {
-    const students = await Student.find().populate("departmentId")
+    const students = await Student.find({institutionDomain: req.institutionDomain}).populate("departmentId")
     return res.status(200).json({
       message: "Students fetched successfully",
       data: { students },
@@ -341,9 +341,7 @@ export const deleteStudent = async (req, res) => {
 
 export const getStudentData = async (req, res) => {
   try {
-    const studentId = req.params.id;
-
-    console.log("Hi");
+    const studentId = req.params.id;    
 
 
     // Validate student ID
